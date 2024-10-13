@@ -19,9 +19,9 @@ table 50137 PTEBCSftpSetup
         {
             Caption = 'Azure Sftp Port';
         }
-        field(4; "Axure Sftp Username"; Text[250])
+        field(4; "Azure Sftp Username"; Text[250])
         {
-            Caption = 'Axure Sftp Username';
+            Caption = 'Azure Sftp Username';
         }
         field(5; "Azure Sftp Password"; Text[2048])
         {

@@ -25,7 +25,7 @@ page 50140 PTEBCDSftpSetup
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Azure Sftp Port field.', Comment = '%';
                 }
-                field("Axure Sftp Username"; Rec."Axure Sftp Username")
+                field("Axure Sftp Username"; Rec."Azure Sftp Username")
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Axure Sftp Username field.', Comment = '%';
