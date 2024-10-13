@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": ".alpackages"
+		},
+		{
+			"path": ".snapshots"
+		},
+		{
+			"path": "al"
+		},
+		{
+			"path": "davesbcsftp"
+		}
+	],
+	"settings": {},
+	"launch": {
+		"configurations": [],
+		"compounds": []
+	}
+}

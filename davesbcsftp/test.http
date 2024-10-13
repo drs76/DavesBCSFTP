@@ -1,0 +1,15 @@
+post http://localhost:7071/api/BCSftp
+Content-Type: application/json
+
+ {
+   "hostName": "192.168.1.230",
+   "userName": "dav",
+   "password": "root1e",
+   "sslCert": "",
+   "rootFolder": "/",
+   "hostCode": "ROJAWS",
+   "folderName": "/mnt/rojaws/stuff/Ftp/Ftp_Folder5",
+   "fileName": "/mnt/rojaws/stuff/Ftp/Ftp_Folder5/myJsonFile1.json",
+   "action": "DownloadFolder",
+   "textTypes": ".txt,.csv,.log,.json,.xml,.html,.al,.cs,.sh,.ps1"
+ }
