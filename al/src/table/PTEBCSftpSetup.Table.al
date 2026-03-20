@@ -1,6 +1,5 @@
 table 50137 PTEBCSftpSetup
 {
-    //TODO: secure password
     Caption = 'Daves Sftp Setup';
     DataClassification = CustomerContent;
 
@@ -23,11 +22,6 @@ table 50137 PTEBCSftpSetup
         {
             Caption = 'Azure Sftp Username';
         }
-        field(5; "Azure Sftp Password"; Text[2048])
-        {
-            Caption = 'Azure Sftp Password';
-            ExtendedDatatype = Masked;
-        }
         field(6; TreatAsTextFiles; Text[2048])
         {
             Caption = 'Treat As Text';
@@ -44,6 +38,8 @@ table 50137 PTEBCSftpSetup
 
     var
         RecordHasBeenRead: Boolean;
+        StorageKeyTok: Label 'PTEBCSftpSetupSecrets', Locked = true;
+        FunctionKeyTok: Label 'functionKey', Locked = true;
 
     procedure GetRecordOnce()
     begin
@@ -51,5 +47,48 @@ table 50137 PTEBCSftpSetup
             exit;
         Rec.Get();
         this.RecordHasBeenRead := true;
+    end;
+
+    [NonDebuggable]
+    procedure SetFunctionKey(NewKey: SecretText)
+    var
+        JObject: JsonObject;
+        KeyValue: Text;
+    begin
+        if IsolatedStorage.Contains(this.StorageKeyTok, DataScope::Company) then begin
+            IsolatedStorage.Get(this.StorageKeyTok, DataScope::Company, KeyValue);
+            JObject.ReadFrom(KeyValue);
+        end;
+
+        if JObject.Contains(this.FunctionKeyTok) then
+            JObject.Replace(this.FunctionKeyTok, NewKey.Unwrap())
+        else
+            JObject.Add(this.FunctionKeyTok, NewKey.Unwrap());
+
+        JObject.WriteTo(KeyValue);
+        IsolatedStorage.Set(this.StorageKeyTok, KeyValue, DataScope::Company);
+    end;
+
+    [NonDebuggable]
+    procedure GetFunctionKey(var FunctionKey: SecretText)
+    var
+        JObject: JsonObject;
+        JToken: JsonToken;
+        KeyValue: Text;
+    begin
+        if not IsolatedStorage.Contains(this.StorageKeyTok, DataScope::Company) then
+            exit;
+
+        IsolatedStorage.Get(this.StorageKeyTok, DataScope::Company, KeyValue);
+        JObject.ReadFrom(KeyValue);
+
+        if JObject.Get(this.FunctionKeyTok, JToken) then
+            FunctionKey := JToken.AsValue().AsText();
+    end;
+
+    procedure DeleteSecrets()
+    begin
+        if IsolatedStorage.Contains(this.StorageKeyTok, DataScope::Company) then
+            IsolatedStorage.Delete(this.StorageKeyTok, DataScope::Company);
     end;
 }

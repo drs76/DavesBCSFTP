@@ -15,6 +15,7 @@ codeunit 50134 PTEBCDSFtpMgt
         HttpStatusLbl: Label 'httpStatus', Locked = true;
         HttpStatusOkLbl: Label 'httpStatusOk', Locked = true;
         TextTypesLbl: Label 'textTypes', Locked = true;
+        FunctionsKeyHeaderTok: Label 'x-functions-key', Locked = true;
 
 
     internal procedure Connect(JSettings: JsonObject) Result: Text
@@ -74,9 +75,12 @@ codeunit 50134 PTEBCDSFtpMgt
         this.AddToSettings(JSettings, this.TextTypesLbl, this.SFtpSetup.TreatAsTextFiles);
     end;
 
+    [NonDebuggable]
     local procedure BuildRequest(SettingsString: Text; Function: Text)
     var
         BCSftpSetup: Record PTEBCSftpSetup;
+        HttpHeaders: HttpHeaders;
+        FunctionKey: SecretText;
         UrlTxt: Label '%1?action=%2';
     begin
         BCSftpSetup.Get();
@@ -86,6 +90,12 @@ codeunit 50134 PTEBCDSFtpMgt
         this.HttpRequest.Method := 'POST';
         this.HttpRequest.Content.WriteFrom(SettingsString);
         this.HttpRequest.SetRequestUri(StrSubstNo(UrlTxt, BCSftpSetup."Azure Sftp Host", Function));
+
+        BCSftpSetup.GetFunctionKey(FunctionKey);
+        if not FunctionKey.IsEmpty() then begin
+            this.HttpRequest.GetHeaders(HttpHeaders);
+            HttpHeaders.Add(this.FunctionsKeyHeaderTok, FunctionKey);
+        end;
     end;
 
     local procedure SendRequest() ReturnValue: Text

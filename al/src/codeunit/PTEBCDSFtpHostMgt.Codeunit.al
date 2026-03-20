@@ -5,9 +5,11 @@ codeunit 50135 PTEBCDSFtpHostMgt
         UsernameLbl: Label 'userName';
         PasswdLbl: Label 'password';
         SSLCertLbl: Label 'sslCert';
+        PortLbl: Label 'port';
 
 
-    internal procedure UpdateHostDetails(FtpName: Text; Host: Text; Usr: Text; Pwd: Text; SslCert: Text)
+    [NonDebuggable]
+    internal procedure UpdateHostDetails(FtpName: Text; Host: Text; Usr: Text; Pwd: SecretText; SslCert: SecretText; Port: Integer)
     var
         JObject: JsonObject;
     begin
@@ -18,11 +20,13 @@ codeunit 50135 PTEBCDSFtpHostMgt
         this.UpdateObject(JObject, this.UsernameLbl, Usr);
         this.UpdateObject(JObject, this.PasswdLbl, Pwd);
         this.UpdateObject(JObject, this.SSLCertLbl, SslCert);
+        this.UpdateObject(JObject, this.PortLbl, Format(Port));
 
         this.SaveInIsolatedStorage(FtpName, JObject);
     end;
 
-    internal procedure GetHostDetails(FtpName: Text; var Host: Text; var Usr: Text; var Pwd: Text; var SslCert: Text)
+    [NonDebuggable]
+    internal procedure GetHostDetails(FtpName: Text; var Host: Text; var Usr: Text; var Pwd: SecretText; var SslCert: SecretText)
     var
         JObject: JsonObject;
         JToken: JsonToken;
@@ -94,24 +98,34 @@ codeunit 50135 PTEBCDSFtpHostMgt
         end;
     end;
 
-    internal procedure UpdateSslCert(FtpName: Text; Host: Text; Usr: Text; Pwd: Text)
+    [NonDebuggable]
+    internal procedure UpdateSslCert(FtpName: Text; Host: Text; Usr: Text; Pwd: SecretText; Port: Integer)
     var
         JObject: JsonObject;
     begin
         this.UpdateObject(JObject, this.HostnameLbl, Host);
         this.UpdateObject(JObject, this.UsernameLbl, Usr);
         this.UpdateObject(JObject, this.PasswdLbl, Pwd);
+        this.UpdateObject(JObject, this.PortLbl, Format(Port));
 
         this.SaveInIsolatedStorage(FtpName, JObject);
     end;
 
     local procedure UpdateObject(var JObject: JsonObject; Name: Text; Value: Text)
-    var
     begin
         if JObject.Contains(Name) then
             JObject.Replace(Name, Value)
         else
             JObject.Add(Name, Value);
+    end;
+
+    [NonDebuggable]
+    local procedure UpdateObject(var JObject: JsonObject; Name: Text; Value: SecretText)
+    begin
+        if JObject.Contains(Name) then
+            JObject.Replace(Name, Value.Unwrap())
+        else
+            JObject.Add(Name, Value.Unwrap());
     end;
 
     local procedure SaveInIsolatedStorage(FtpName: Text; JObject: JsonObject)

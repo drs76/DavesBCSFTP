@@ -81,6 +81,11 @@ page 50135 PTEBCDSFtpHostCard
                 {
                     ApplicationArea = All;
                     ToolTip = 'The FTP port to connect to. 0: Auto (21 or 990 depending on FTPS config)';
+
+                    trigger OnValidate()
+                    begin
+                        this.UpdateHostDetails();
+                    end;
                 }
 
                 field(SSLSetting; Rec.SSLSetting)
@@ -129,14 +134,16 @@ page 50135 PTEBCDSFtpHostCard
                     trigger OnAssistEdit()
                     var
                         ReadStream: InStream;
+                        CertText: Text;
                         Filename: Text;
                         SelectFileMsg: Label 'Select Certificate file';
                         CertificateLoadedOkMsg: Label 'Certificate loaded ok.';
                     begin
                         UploadIntoStream(SelectFileMsg, '', '', Filename, ReadStream);
-                        if ReadStream.Read(this.FtpSslCert) = 0 then
+                        if ReadStream.Read(CertText) = 0 then
                             exit;
 
+                        this.FtpSslCert := CertText;
                         this.UpdateHostDetails();
                         Message(CertificateLoadedOkMsg);
                     end;
@@ -197,7 +204,7 @@ page 50135 PTEBCDSFtpHostCard
     [NonDebuggable]
     local procedure UpdateHostDetails()
     begin
-        this.FtpHostMgt.UpdateHostDetails(Rec.Name, this.FtpHost, this.FtpUser, this.FtpPasswd, this.FtpSslCert);
+        this.FtpHostMgt.UpdateHostDetails(Rec.Name, this.FtpHost, this.FtpUser, this.FtpPasswd, this.FtpSslCert, Rec.Port);
     end;
 
     var
@@ -206,7 +213,7 @@ page 50135 PTEBCDSFtpHostCard
         FtpHost: Text;
         FtpUser: Text;
         [NonDebuggable]
-        FtpPasswd: Text;
+        FtpPasswd: SecretText;
         [NonDebuggable]
-        FtpSslCert: Text;
+        FtpSslCert: SecretText;
 }

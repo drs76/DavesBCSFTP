@@ -1,7 +1,7 @@
 table 50135 PTEBCSFtpHost
 {
     Caption = 'Daves Sftp Host';
-    DataClassification = ToBeClassified;
+    DataClassification = CustomerContent;
 
     fields
     {

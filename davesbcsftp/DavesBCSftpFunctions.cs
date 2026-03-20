@@ -1,9 +1,6 @@
-using System.Buffers.Text;
 using System.IO.Compression;
-using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Newtonsoft.Json;
@@ -22,8 +19,6 @@ namespace davesbcsftp
         const string ConstListFiles = "ListFiles";
         private const string InvalidAction = "Invalid action";
         private const string FileContentType = "application/octet-stream";
-        private const string ZipFileContentType = "application/zip";
-        private static dynamic ftpSetup = string.Empty;
         private struct FtpFile
         {
             public string? Foldername { get; set; }
@@ -36,29 +31,29 @@ namespace davesbcsftp
         }
 
         [Function("BCSftp")]
-        public static async Task<IActionResult> BCSftp([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+        public static async Task<IActionResult> BCSftp([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req)
         {
             string? action = req.Query["action"];
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            ftpSetup = JsonConvert.DeserializeObject(requestBody) ?? string.Empty;
+            dynamic ftpSetup = JsonConvert.DeserializeObject(requestBody) ?? string.Empty;
             action ??= ftpSetup?.action;
 
-            if (action == null || requestBody == null)
+            if (action == null)
                 return new BadRequestObjectResult("Please pass a name on the query string or in the request body");
 
-            CancellationTokenSource TokenSource = new();
+            using CancellationTokenSource TokenSource = new();
             CancellationToken cancellationToken = TokenSource.Token;
-            using var client = GetClient();
+            using var client = GetClient(ftpSetup);
             try
             {
                 return action switch
                 {
-                    ConstListFiles => await ListFiles(client, cancellationToken),
-                    ConstDownloadFile => await DownloadFileAsync(client, cancellationToken),
-                    ConstDownloadFolder => await DownloadFolderAsync(client, cancellationToken),
-                    ConstRemoveFile => await RemoveFile(client),
-                    ConstRemoveFolder => await RemoveFile(client),
+                    ConstListFiles => await ListFiles(client, ftpSetup, cancellationToken),
+                    ConstDownloadFile => await DownloadFileAsync(client, ftpSetup, cancellationToken),
+                    ConstDownloadFolder => await DownloadFolderAsync(client, ftpSetup, cancellationToken),
+                    ConstRemoveFile => await RemoveFile(client, ftpSetup),
+                    ConstRemoveFolder => await RemoveFolder(client, ftpSetup),
                     _ => new BadRequestObjectResult(InvalidAction),
                 };
             }
@@ -72,9 +67,11 @@ namespace davesbcsftp
             }
         }
 
-        private static SftpClient GetClient()
+        private static SftpClient GetClient(dynamic ftpSetup)
         {
-            var connectionInfo = new PasswordConnectionInfo(ftpSetup.hostName.ToString(), 22, ftpSetup.userName.ToString(), ftpSetup.password.ToString());
+            int port = (int?)ftpSetup?.port ?? 0;
+            if (port == 0) port = 22;
+            var connectionInfo = new PasswordConnectionInfo(ftpSetup.hostName.ToString(), port, ftpSetup.userName.ToString(), ftpSetup.password.ToString());
             var client = new SftpClient(connectionInfo)
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(1)
@@ -83,20 +80,19 @@ namespace davesbcsftp
             return client;
         }
 
-        private static async Task<IActionResult> ListFiles(SftpClient client, CancellationToken cancellationToken)
+        private static async Task<IActionResult> ListFiles(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)
         {
             List<FtpFile> files;
-            files = await GetFilesAsync(client, ftpSetup.folderName.ToString(), cancellationToken);
+            files = await GetFilesAsync(client, ftpSetup.folderName.ToString(), ftpSetup, cancellationToken);
             return new OkObjectResult(new { FileList = files, Count = files.Count });
         }
 
-        private static Task<List<FtpFile>> GetFilesAsync(SftpClient sftpClient, string directory, CancellationToken cancellationToken)
+        private static Task<List<FtpFile>> GetFilesAsync(SftpClient sftpClient, string directory, dynamic ftpSetup, CancellationToken cancellationToken)
         {
-            var files = Task.Run(() => GetFiles(sftpClient, directory, cancellationToken));
-            return files;
+            return Task.FromResult(GetFiles(sftpClient, directory, ftpSetup, cancellationToken));
         }
 
-        private static List<FtpFile> GetFiles(SftpClient sftpClient, string directory, CancellationToken cancellationToken)
+        private static List<FtpFile> GetFiles(SftpClient sftpClient, string directory, dynamic ftpSetup, CancellationToken cancellationToken)
         {
             string currentFolder = directory;
             string parentFolder = directory.Equals(ftpSetup.rootFolder.ToString()) ? directory : directory.Remove(directory.LastIndexOf(FwdSlash));
@@ -126,7 +122,7 @@ namespace davesbcsftp
 
                 if (sftpFile.IsDirectory && sftpFile.FullName != directory)
                 {
-                    var files2 = GetFiles(sftpClient, sftpFile.FullName, cancellationToken);
+                    var files2 = GetFiles(sftpClient, sftpFile.FullName, ftpSetup, cancellationToken);
                     files.AddRange(files2);
                 }
             }
@@ -139,12 +135,12 @@ namespace davesbcsftp
             files.Add(new FtpFile() { Foldername = currentFolder, ParentFolder = parentFolder, Fullname = sftpFile.FullName, Name = name, Modified = sftpFile.LastWriteTime.ToShortDateString().ToString(), Folder = sftpFile.IsDirectory, Size = sftpFile.Length });
         }
 
-        private static async Task<IActionResult> DownloadFileAsync(SftpClient client, CancellationToken cancellationToken)
+        private static Task<IActionResult> DownloadFileAsync(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)
         {
-            var file = await Task.Run(() => DownloadFile(client, cancellationToken));
-            return file;
+            return Task.FromResult<IActionResult>(DownloadFile(client, ftpSetup, cancellationToken));
         }
-        private static OkObjectResult DownloadFile(SftpClient client, CancellationToken cancellationToken)
+
+        private static OkObjectResult DownloadFile(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 throw new TaskCanceledException();
@@ -169,7 +165,7 @@ namespace davesbcsftp
             });
         }
 
-        private static async Task<IActionResult> RemoveFile(SftpClient client)
+        private static async Task<IActionResult> RemoveFile(SftpClient client, dynamic ftpSetup)
         {
             if (client.Exists(ftpSetup.fileName.ToString()))
             {
@@ -184,13 +180,13 @@ namespace davesbcsftp
             }
         }
 
-        private static async Task<IActionResult> DownloadFolderAsync(SftpClient client, CancellationToken cancellationToken)
+        private static async Task<IActionResult> DownloadFolderAsync(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)
         {
-            var folderZip = await DownloadFolder(client, cancellationToken);
+            var folderZip = await DownloadFolder(client, ftpSetup, cancellationToken);
             return folderZip;
         }
 
-        private static async Task<OkObjectResult> DownloadFolder(SftpClient client, CancellationToken cancellationToken)
+        private static async Task<OkObjectResult> DownloadFolder(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)
         {
             string root = Path.GetFileName(ftpSetup.folderName.ToString()) + "/";
             byte[] ftpFile;
@@ -227,7 +223,7 @@ namespace davesbcsftp
             });
         }
 
-        private static async Task<IActionResult> RemoveFolder(SftpClient client)
+        private static async Task<IActionResult> RemoveFolder(SftpClient client, dynamic ftpSetup)
         {
             CancellationTokenSource cancellationTokenSource = new();
             CancellationToken cancellationToken = cancellationTokenSource.Token;

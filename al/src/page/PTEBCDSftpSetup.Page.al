@@ -30,10 +30,17 @@ page 50140 PTEBCDSftpSetup
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Axure Sftp Username field.', Comment = '%';
                 }
-                field("Azure Sftp Password"; Rec."Azure Sftp Password")
+                field(AzureFunctionKey; this.FunctionKey)
                 {
                     ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Azure Sftp Password field.', Comment = '%';
+                    Caption = 'Azure Function Key';
+                    ToolTip = 'Specifies the Azure Function Key used to authenticate with the Azure Function endpoint.';
+                    ExtendedDatatype = Masked;
+
+                    trigger OnValidate()
+                    begin
+                        this.SaveSecrets();
+                    end;
                 }
             }
             group(TreatAsText)
@@ -48,4 +55,25 @@ page 50140 PTEBCDSftpSetup
             }
         }
     }
+
+    trigger OnOpenPage()
+    begin
+        this.LoadSecrets();
+    end;
+
+    [NonDebuggable]
+    local procedure LoadSecrets()
+    begin
+        Rec.GetFunctionKey(this.FunctionKey);
+    end;
+
+    [NonDebuggable]
+    local procedure SaveSecrets()
+    begin
+        Rec.SetFunctionKey(this.FunctionKey);
+    end;
+
+    var
+        [NonDebuggable]
+        FunctionKey: SecretText;
 }
