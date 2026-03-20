@@ -1,4 +1,4 @@
-table 50135 PTEBCSFtpHost
+table 50135 DBCSFtpHostPTE
 {
     Caption = 'Daves Sftp Host';
     DataClassification = CustomerContent;
@@ -93,7 +93,7 @@ table 50135 PTEBCSFtpHost
 
     trigger OnDelete()
     var
-        HostMgt: Codeunit PTEBCDSFtpHostMgt;
+        HostMgt: Codeunit DBCSFtpHostMgtPTE;
     begin
         HostMgt.DeleteHostDetails(Rec.Name);
     end;

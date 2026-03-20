@@ -1,10 +1,10 @@
-page 50134 PTEBCDSFtpHosts
+page 50134 DBCSFtpHostsPTE
 {
     Caption = 'Daves Sftp Hosts';
     PageType = List;
-    SourceTable = PTEBCSFtpHost;
+    SourceTable = DBCSFtpHostPTE;
     UsageCategory = None;
-    CardPageId = PTEBCDSFtpHostCard;
+    CardPageId = DBCSFtpHostCardPTE;
     ModifyAllowed = false;
 
     layout

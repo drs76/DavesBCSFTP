@@ -1,4 +1,4 @@
-table 50138 PTEBCSftpFileBuffer
+table 50138 DBCSftpFileBufferPTE
 {
     Caption = 'Sftp File Buffer';
     DataClassification = CustomerContent;

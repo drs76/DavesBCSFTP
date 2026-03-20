@@ -1,9 +1,9 @@
-page 50137 PTEBCDSftpDownloadedFiles
+page 50137 DBCSftpDownloadedFilesPTE
 {
     ApplicationArea = All;
     Caption = 'Daves Sftp Downloaded Files';
     PageType = List;
-    SourceTable = PTEBCFTPDownloadedFile;
+    SourceTable = DBCFTPDownloadedFilePTE;
     UsageCategory = Administration;
     Editable = false;
 
@@ -117,7 +117,7 @@ page 50137 PTEBCDSftpDownloadedFiles
                 end;
             }
 
-            action(Delete)
+            action("Delete")
             {
                 Caption = 'Delete Download';
                 ToolTip = 'Deleted the selected download file(s).';
@@ -138,7 +138,7 @@ page 50137 PTEBCDSftpDownloadedFiles
 
     local procedure DownloadDrillDown()
     var
-        FtpZipFileContents: Page PTEBCDSFtpZipContents;
+        FtpZipFileContents: Page DBCSFtpZipContentsPTE;
         NewCaptionLbl: Label 'Contents of %1', Comment = '%1 - Foldername/Zip-Filename';
     begin
         if not Rec.Compressed then begin
@@ -153,7 +153,7 @@ page 50137 PTEBCDSftpDownloadedFiles
 
     local procedure DeleteRecs()
     var
-        DownloadFiles: Record PTEBCFTPDownloadedFile;
+        DownloadFiles: Record DBCFTPDownloadedFilePTE;
     begin
         CurrPage.SetSelectionFilter(DownloadFiles);
         if not DownloadFiles.IsEmpty() then

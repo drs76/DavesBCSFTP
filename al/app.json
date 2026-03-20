@@ -2,7 +2,7 @@
   "id": "d8ba6db0-f971-4a80-9347-711db524a954",
   "name": "Daves BCSFTP",
   "publisher": "Dave Sinclair",
-  "version": "20.0.25525.0",
+  "version": "27.0.25525.0",
   "brief": "",
   "description": "FTP using Azure Function",
   "privacyStatement": "",
@@ -14,7 +14,7 @@
   "screenshots": [],
   "platform": "27.0.0.0",
   "application": "27.0.0.0",
-  "runtime": "17.0",
+  "runtime": "16.0",
   "resourceExposurePolicy": {
     "allowDebugging": true
   }

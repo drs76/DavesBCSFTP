@@ -1,7 +1,7 @@
-codeunit 50134 PTEBCDSFtpMgt
+codeunit 50134 DBCSFtpMgtPTE
 {
     var
-        SFtpSetup: Record PTEBCSftpSetup;
+        SFtpSetup: Record DBCSftpSetupPTE;
         HttpRequest: HttpRequestMessage;
         HttpClient: HttpClient;
         ConnectFtpTok: Label 'connectSFtp', Locked = true;
@@ -16,55 +16,45 @@ codeunit 50134 PTEBCDSFtpMgt
         HttpStatusOkLbl: Label 'httpStatusOk', Locked = true;
         TextTypesLbl: Label 'textTypes', Locked = true;
         FunctionsKeyHeaderTok: Label 'x-functions-key', Locked = true;
+        SftpPasswordHeaderTok: Label 'x-sftp-password', Locked = true;
+        SftpSslCertHeaderTok: Label 'x-sftp-sslcert', Locked = true;
 
 
     internal procedure Connect(JSettings: JsonObject) Result: Text
-    var
-        SettingsString: Text;
     begin
         this.AddToSettings(JSettings, this.ActionLbl, this.ConnectFtpTok);
-        JSettings.WriteTo(SettingsString);
         this.AddTextTypes(JSettings);
-        this.BuildRequest(SettingsString, this.ConnectFtpTok);
+        this.BuildRequest(JSettings, this.ConnectFtpTok);
         Result := this.SendRequest();
         Result := this.GetResult(Result);
     end;
 
     internal procedure GetFilesList(JSettings: JsonObject; FolderName: Text) Result: Text
-    var
-        SettingsString: Text;
     begin
         this.AddToSettings(JSettings, this.FolderNameTok, FolderName);
         this.AddToSettings(JSettings, this.ActionLbl, this.GetFileListFtpTok);
         this.AddTextTypes(JSettings);
-        JSettings.WriteTo(SettingsString);
-        this.BuildRequest(SettingsString, this.GetFileListFtpTok);
+        this.BuildRequest(JSettings, this.GetFileListFtpTok);
         Result := this.SendRequest();
         Result := this.GetResult(Result);
     end;
 
     internal procedure DownLoadFile(JSettings: JsonObject; FileName: Text) Result: Text
-    var
-        SettingsString: Text;
     begin
         this.AddToSettings(JSettings, this.FileNameTok, FileName);
         this.AddToSettings(JSettings, this.ActionLbl, this.DownloadFileFtpTok);
         this.AddTextTypes(JSettings);
-        JSettings.WriteTo(SettingsString);
-        this.BuildRequest(SettingsString, this.DownloadFileFtpTok);
+        this.BuildRequest(JSettings, this.DownloadFileFtpTok);
         Result := this.SendRequest();
         Result := this.GetResult(Result);
     end;
 
     internal procedure DownLoadFolder(JSettings: JsonObject; FolderName: Text) Result: Text
-    var
-        SettingsString: Text;
     begin
         this.AddToSettings(JSettings, this.FolderNameTok, FolderName);
         this.AddToSettings(JSettings, this.ActionLbl, this.DownloadFolderFtpTok);
         this.AddTextTypes(JSettings);
-        JSettings.WriteTo(SettingsString);
-        this.BuildRequest(SettingsString, this.DownloadFolderFtpTok);
+        this.BuildRequest(JSettings, this.DownloadFolderFtpTok);
         Result := this.SendRequest();
         Result := this.GetResult(Result);
     end;
@@ -76,26 +66,40 @@ codeunit 50134 PTEBCDSFtpMgt
     end;
 
     [NonDebuggable]
-    local procedure BuildRequest(SettingsString: Text; Function: Text)
+    local procedure BuildRequest(JSettings: JsonObject; Function: Text)
     var
-        BCSftpSetup: Record PTEBCSftpSetup;
+        BCSftpSetup: Record DBCSftpSetupPTE;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
         HttpHeaders: HttpHeaders;
         FunctionKey: SecretText;
-        UrlTxt: Label '%1?action=%2';
+        Pwd: SecretText;
+        SslCert: SecretText;
+        HostCode: Text;
+        SettingsString: Text;
+        UrlTxt: Label '%1?action=%2', Locked = true;
     begin
         BCSftpSetup.Get();
         BCSftpSetup.TestField("Azure Sftp Host");
+
+        HostCode := FtpHostMgt.GetHostCode(JSettings);
+        if HostCode <> '' then
+            FtpHostMgt.GetSecrets(HostCode, Pwd, SslCert);
+
+        JSettings.WriteTo(SettingsString);
 
         Clear(this.HttpRequest);
         this.HttpRequest.Method := 'POST';
         this.HttpRequest.Content.WriteFrom(SettingsString);
         this.HttpRequest.SetRequestUri(StrSubstNo(UrlTxt, BCSftpSetup."Azure Sftp Host", Function));
 
+        this.HttpRequest.GetHeaders(HttpHeaders);
         BCSftpSetup.GetFunctionKey(FunctionKey);
-        if not FunctionKey.IsEmpty() then begin
-            this.HttpRequest.GetHeaders(HttpHeaders);
+        if not FunctionKey.IsEmpty() then
             HttpHeaders.Add(this.FunctionsKeyHeaderTok, FunctionKey);
-        end;
+        if not Pwd.IsEmpty() then
+            HttpHeaders.Add(this.SftpPasswordHeaderTok, Pwd);
+        if not SslCert.IsEmpty() then
+            HttpHeaders.Add(this.SftpSslCertHeaderTok, SslCert);
     end;
 
     local procedure SendRequest() ReturnValue: Text

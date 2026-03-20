@@ -1,4 +1,4 @@
-codeunit 50136 PTEBCDSftpFileMgt
+codeunit 50136 DBCSftpFileMgtPTE
 {
     var
         ProgressWindow: Dialog;
@@ -9,7 +9,7 @@ codeunit 50136 PTEBCDSftpFileMgt
         DownloadLbl: Label 'Downloading..';
 
 
-    internal procedure DownloadFiles(JSettings: JsonObject; var BCSftpBuffer: Record PTEBCSftpFileBuffer)
+    internal procedure DownloadFiles(JSettings: JsonObject; var BCSftpBuffer: Record DBCSftpFileBufferPTE)
     var
         TempBlob: Codeunit "Temp Blob";
         FailedTB: TextBuilder;
@@ -38,9 +38,9 @@ codeunit 50136 PTEBCDSftpFileMgt
                 Message(StrSubstNo(FailuresMsg, FailedTB.ToText()));
     end;
 
-    internal procedure DownloadFolder(JSettings: JsonObject; BCSftpFileBuffer: Record PTEBCSftpFileBuffer)
+    internal procedure DownloadFolder(JSettings: JsonObject; BCSftpFileBuffer: Record DBCSftpFileBufferPTE)
     var
-        BCFtpMgt: Codeunit PTEBCDSFtpMgt;
+        BCFtpMgt: Codeunit DBCSFtpMgtPTE;
         TempBlob: Codeunit "Temp Blob";
         Base64: Codeunit "Base64 Convert";
         WriteStream: OutStream;
@@ -85,7 +85,7 @@ codeunit 50136 PTEBCDSftpFileMgt
 
     internal procedure GetFtpFolderFilesList(JSettings: JsonObject; FtpFolder: Text) ReturnValue: JsonArray
     var
-        BCFtpMgt: Codeunit PTEBCDSFtpMgt;
+        BCFtpMgt: Codeunit DBCSFtpMgtPTE;
         JObject: JsonToken;
         JToken: JsonToken;
         Result: Text;
@@ -119,7 +119,7 @@ codeunit 50136 PTEBCDSftpFileMgt
             ReturnValue := CopyStr(ReturnValue, 1, StrLen(ReturnValue) - 1);
     end;
 
-    internal procedure SetFtpFilesSource(var SftpParams: Codeunit PTEBCDSftpParams; NewSource: JsonArray)
+    internal procedure SetFtpFilesSource(var SftpParams: Codeunit DBCSftpParamsPTE; NewSource: JsonArray)
     var
         JToken: JsonToken;
     begin
@@ -128,9 +128,9 @@ codeunit 50136 PTEBCDSftpFileMgt
             SftpParams.AddToFileBuffer(NewSource.IndexOf(JToken) + 1, JToken.AsObject());
     end;
 
-    local procedure DownloadFtpFile(var JSettings: JsonObject; var BCFtpFileBuffer: Record PTEBCSftpFileBuffer; var TempBlob: Codeunit "Temp Blob") ReturnValue: Boolean
+    local procedure DownloadFtpFile(var JSettings: JsonObject; var BCFtpFileBuffer: Record DBCSftpFileBufferPTE; var TempBlob: Codeunit "Temp Blob") ReturnValue: Boolean
     var
-        BCFtpMgt: Codeunit PTEBCDSFtpMgt;
+        BCFtpMgt: Codeunit DBCSFtpMgtPTE;
         Base64Convert: Codeunit "Base64 Convert";
         WriteStream: OutStream;
         JToken: JsonToken;
@@ -156,9 +156,9 @@ codeunit 50136 PTEBCDSftpFileMgt
         FileObject.Get(FileContentsLbl, ReturnValue);
     end;
 
-    local procedure StoreDownloadFtpFile(JSettings: JsonObject; BCFtpFIleBuffer: Record PTEBCSftpFileBuffer; var TempBlob: Codeunit "Temp Blob"; IsCompressed: Boolean)
+    local procedure StoreDownloadFtpFile(JSettings: JsonObject; BCFtpFIleBuffer: Record DBCSftpFileBufferPTE; var TempBlob: Codeunit "Temp Blob"; IsCompressed: Boolean)
     var
-        FtpDownloadedFiles: Record PTEBCFTPDownloadedFile;
+        FtpDownloadedFiles: Record DBCFTPDownloadedFilePTE;
         StoringLbl: Label 'Storing to Ftp Downloads table..';
     begin
         if GuiAllowed then

@@ -1,8 +1,8 @@
-page 50133 PTEBCDSFtpClientFilesPart
+page 50133 DBCSFtpClientFilesPartPTE
 {
     Caption = 'Ftp Files';
     PageType = ListPart;
-    SourceTable = PTEBCSftpFileBuffer;
+    SourceTable = DBCSftpFileBufferPTE;
     SourceTableTemporary = true;
     Editable = false;
     InsertAllowed = false;
@@ -118,8 +118,8 @@ page 50133 PTEBCDSFtpClientFilesPart
 
 
     var
-        BCFtpClientMgt: Codeunit PTEBCDSftpFileMgt;
-        SftpParams: Codeunit PTEBCDSftpParams;
+        BCFtpClientMgt: Codeunit DBCSftpFileMgtPTE;
+        SftpParams: Codeunit DBCSftpParamsPTE;
         JSettings: JsonObject;
         StyleTxt: Text;
         UpLevelLbl: Label '..';
@@ -155,7 +155,7 @@ page 50133 PTEBCDSFtpClientFilesPart
 
     internal procedure DownloadFiles()
     var
-        BCSftpFileBuffer: Record PTEBCSftpFileBuffer;
+        BCSftpFileBuffer: Record DBCSftpFileBufferPTE;
     begin
         if Rec.IsDirectory or (Rec.FileName = this.UpLevelLbl) then
             exit;

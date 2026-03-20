@@ -1,4 +1,4 @@
-table 50137 PTEBCSftpSetup
+table 50137 DBCSftpSetupPTE
 {
     Caption = 'Daves Sftp Setup';
     DataClassification = CustomerContent;
@@ -38,8 +38,7 @@ table 50137 PTEBCSftpSetup
 
     var
         RecordHasBeenRead: Boolean;
-        StorageKeyTok: Label 'PTEBCSftpSetupSecrets', Locked = true;
-        FunctionKeyTok: Label 'functionKey', Locked = true;
+        StorageKeyTok: Label 'PTEBCSftpSetupFunctionKey', Locked = true;
 
     procedure GetRecordOnce()
     begin
@@ -51,39 +50,16 @@ table 50137 PTEBCSftpSetup
 
     [NonDebuggable]
     procedure SetFunctionKey(NewKey: SecretText)
-    var
-        JObject: JsonObject;
-        KeyValue: Text;
     begin
-        if IsolatedStorage.Contains(this.StorageKeyTok, DataScope::Company) then begin
-            IsolatedStorage.Get(this.StorageKeyTok, DataScope::Company, KeyValue);
-            JObject.ReadFrom(KeyValue);
-        end;
-
-        if JObject.Contains(this.FunctionKeyTok) then
-            JObject.Replace(this.FunctionKeyTok, NewKey.Unwrap())
-        else
-            JObject.Add(this.FunctionKeyTok, NewKey.Unwrap());
-
-        JObject.WriteTo(KeyValue);
-        IsolatedStorage.Set(this.StorageKeyTok, KeyValue, DataScope::Company);
+        IsolatedStorage.Set(this.StorageKeyTok, NewKey, DataScope::Company);
     end;
 
     [NonDebuggable]
     procedure GetFunctionKey(var FunctionKey: SecretText)
-    var
-        JObject: JsonObject;
-        JToken: JsonToken;
-        KeyValue: Text;
     begin
         if not IsolatedStorage.Contains(this.StorageKeyTok, DataScope::Company) then
             exit;
-
-        IsolatedStorage.Get(this.StorageKeyTok, DataScope::Company, KeyValue);
-        JObject.ReadFrom(KeyValue);
-
-        if JObject.Get(this.FunctionKeyTok, JToken) then
-            FunctionKey := JToken.AsValue().AsText();
+        IsolatedStorage.Get(this.StorageKeyTok, DataScope::Company, FunctionKey);
     end;
 
     procedure DeleteSecrets()

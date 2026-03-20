@@ -42,9 +42,12 @@ namespace davesbcsftp
             if (action == null)
                 return new BadRequestObjectResult("Please pass a name on the query string or in the request body");
 
+            string password = req.Headers["x-sftp-password"].ToString();
+            string sslCert = req.Headers["x-sftp-sslcert"].ToString();
+
             using CancellationTokenSource TokenSource = new();
             CancellationToken cancellationToken = TokenSource.Token;
-            using var client = GetClient(ftpSetup);
+            using var client = GetClient(ftpSetup, password);
             try
             {
                 return action switch
@@ -67,11 +70,11 @@ namespace davesbcsftp
             }
         }
 
-        private static SftpClient GetClient(dynamic ftpSetup)
+        private static SftpClient GetClient(dynamic ftpSetup, string password)
         {
             int port = (int?)ftpSetup?.port ?? 0;
             if (port == 0) port = 22;
-            var connectionInfo = new PasswordConnectionInfo(ftpSetup.hostName.ToString(), port, ftpSetup.userName.ToString(), ftpSetup.password.ToString());
+            var connectionInfo = new PasswordConnectionInfo(ftpSetup.hostName.ToString(), port, ftpSetup.userName.ToString(), password);
             var client = new SftpClient(connectionInfo)
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(1)

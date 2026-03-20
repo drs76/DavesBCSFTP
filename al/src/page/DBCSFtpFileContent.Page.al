@@ -1,4 +1,4 @@
-page 50139 PTEBCDSFtpFileContent
+page 50139 DBCSFtpFileContentPTE
 {
     Caption = 'Daves Sftp File Content';
     PageType = NavigatePage;
@@ -13,7 +13,7 @@ page 50139 PTEBCDSFtpFileContent
     {
         area(content)
         {
-            usercontrol(fileContent; PTEBCDSFtpFileContent)
+            usercontrol(fileContent; DBCSFtpFileContentPTE)
             {
                 ApplicationArea = All;
 

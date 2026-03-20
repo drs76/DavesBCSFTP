@@ -1,8 +1,8 @@
-page 50135 PTEBCDSFtpHostCard
+page 50135 DBCSFtpHostCardPTE
 {
     Caption = 'Daves Sftp Host Card';
     PageType = Card;
-    SourceTable = PTEBCSFtpHost;
+    SourceTable = DBCSFtpHostPTE;
     UsageCategory = None;
 
     layout
@@ -43,16 +43,17 @@ page 50135 PTEBCDSFtpHostCard
                     end;
                 }
 
-                field(FtpPasswd; this.FtpPasswd)
+                field(FtpPasswdDisplay; this.FtpPasswdDisplay)
                 {
                     Caption = 'FTP Passwd';
-                    ToolTip = 'Specifies the FTP Password.';
+                    ToolTip = 'Specifies the FTP Password. Click the assist button to set or update.';
                     ApplicationArea = All;
                     ExtendedDatatype = Masked;
+                    Editable = false;
 
-                    trigger OnValidate()
+                    trigger OnAssistEdit()
                     begin
-                        this.UpdateHostDetails();
+                        this.EnterPassword();
                     end;
                 }
 
@@ -118,34 +119,17 @@ page 50135 PTEBCDSFtpHostCard
                     ToolTip = 'Whether to use SSL Buffering to speed up data transfer during FTP operations. Turn this off if you are having random issues with FTPS/SSL file transfer';
                 }
 
-                field(FtpSslCert; this.FtpSslCert)
+                field(FtpSslCertDisplay; this.FtpSslCertDisplay)
                 {
                     ApplicationArea = All;
                     Caption = 'SSL Certificate';
-                    ToolTip = 'Specify the SSL Certifate to use for the connection FTPS. Paste raw certificate text, or assist edit to upload from files.';
+                    ToolTip = 'Specifies the SSL Certificate for the FTPS connection. Click the assist button to set or update.';
                     ExtendedDatatype = Masked;
-                    MultiLine = true;
-
-                    trigger OnValidate()
-                    begin
-                        this.UpdateHostDetails();
-                    end;
+                    Editable = false;
 
                     trigger OnAssistEdit()
-                    var
-                        ReadStream: InStream;
-                        CertText: Text;
-                        Filename: Text;
-                        SelectFileMsg: Label 'Select Certificate file';
-                        CertificateLoadedOkMsg: Label 'Certificate loaded ok.';
                     begin
-                        UploadIntoStream(SelectFileMsg, '', '', Filename, ReadStream);
-                        if ReadStream.Read(CertText) = 0 then
-                            exit;
-
-                        this.FtpSslCert := CertText;
-                        this.UpdateHostDetails();
-                        Message(CertificateLoadedOkMsg);
+                        this.EnterSslCert();
                     end;
                 }
 
@@ -174,13 +158,15 @@ page 50135 PTEBCDSFtpHostCard
 
                 trigger OnAction()
                 var
-                    FtpMgt: Codeunit PTEBCDSFtpMgt;
-                    FtpHostMgt: Codeunit PTEBCDSFtpHostMgt;
-                    FtpClientMgt: Codeunit PTEBCDSftpFileMgt;
+                    FtpMgt: Codeunit DBCSFtpMgtPTE;
+                    FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
+                    FtpClientMgt: Codeunit DBCSftpFileMgtPTE;
                     JSettings: JsonObject;
                     ResponseTxt: Text;
+                    Pwd: SecretText;
+                    SslCert: SecretText;
                 begin
-                    FtpHostMgt.GetHostDetails(Rec.Name, JSettings);
+                    FtpHostMgt.GetHostDetails(Rec.Name, JSettings, Pwd, SslCert);
                     FtpClientMgt.UpdateClientPageSettings(JSettings, Rec.RootFolder);
                     ResponseTxt := FtpMgt.Connect(JSettings);
 
@@ -192,13 +178,21 @@ page 50135 PTEBCDSFtpHostCard
 
     trigger OnOpenPage()
     begin
-        this.GetHostDetails();
+        this.LoadHostDetails();
     end;
 
     [NonDebuggable]
-    local procedure GetHostDetails()
+    local procedure LoadHostDetails()
+    var
+        HasPwd: Boolean;
+        HasSslCert: Boolean;
     begin
         this.FtpHostMgt.GetHostDetails(Rec.Name, this.FtpHost, this.FtpUser, this.FtpPasswd, this.FtpSslCert);
+        this.FtpHostMgt.HasSecrets(Rec.Name, HasPwd, HasSslCert);
+        if HasPwd then
+            this.FtpPasswdDisplay := this.SecretIsSetTok;
+        if HasSslCert then
+            this.FtpSslCertDisplay := this.SecretIsSetTok;
     end;
 
     [NonDebuggable]
@@ -207,13 +201,48 @@ page 50135 PTEBCDSFtpHostCard
         this.FtpHostMgt.UpdateHostDetails(Rec.Name, this.FtpHost, this.FtpUser, this.FtpPasswd, this.FtpSslCert, Rec.Port);
     end;
 
+    [NonDebuggable]
+    local procedure EnterPassword()
+    var
+        SecretInput: Page DBCSftpSecretInputPTE;
+        NewSecret: SecretText;
+    begin
+        if SecretInput.RunModal() = Action::OK then begin
+            SecretInput.GetSecret(NewSecret);
+            if not NewSecret.IsEmpty() then begin
+                this.FtpPasswd := NewSecret;
+                this.FtpPasswdDisplay := this.SecretIsSetTok;
+                this.UpdateHostDetails();
+            end;
+        end;
+    end;
+
+    [NonDebuggable]
+    local procedure EnterSslCert()
+    var
+        SecretInput: Page DBCSftpSecretInputPTE;
+        NewSecret: SecretText;
+    begin
+        if SecretInput.RunModal() = Action::OK then begin
+            SecretInput.GetSecret(NewSecret);
+            if not NewSecret.IsEmpty() then begin
+                this.FtpSslCert := NewSecret;
+                this.FtpSslCertDisplay := this.SecretIsSetTok;
+                this.UpdateHostDetails();
+            end;
+        end;
+    end;
+
     var
         [NonDebuggable]
-        FtpHostMgt: Codeunit PTEBCDSFtpHostMgt;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
         FtpHost: Text;
         FtpUser: Text;
         [NonDebuggable]
         FtpPasswd: SecretText;
+        FtpPasswdDisplay: Text;
         [NonDebuggable]
         FtpSslCert: SecretText;
+        FtpSslCertDisplay: Text;
+        SecretIsSetTok: Label '●●●●●●●●', Locked = true;
 }

@@ -1,4 +1,4 @@
-table 50136 PTEBCFTPDownloadedFile
+table 50136 DBCFTPDownloadedFilePTE
 {
     Caption = 'Daves Sftp Downloaded Files';
     DataClassification = CustomerContent;
@@ -65,11 +65,11 @@ table 50136 PTEBCFTPDownloadedFile
         EmptyTxt: Label '';
 
 
-    internal procedure CreateEntry(JSettings: JsonObject; BCSftpFileBuffer: Record PTEBCSftpFileBuffer; var TempBlob: Codeunit "Temp Blob"; IsCompressed: Boolean)
+    internal procedure CreateEntry(JSettings: JsonObject; BCSftpFileBuffer: Record DBCSftpFileBufferPTE; var TempBlob: Codeunit "Temp Blob"; IsCompressed: Boolean)
     var
-        FtpDownloadedFiles: Record PTEBCFTPDownloadedFile;
-        FtpClientMgt: Codeunit PTEBCDSftpFileMgt;
-        FtpHostMgt: Codeunit PTEBCDSFtpHostMgt;
+        FtpDownloadedFiles: Record DBCFTPDownloadedFilePTE;
+        FtpClientMgt: Codeunit DBCSftpFileMgtPTE;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
         ReadStream: InStream;
         NewFileName: Text;
     begin
@@ -190,7 +190,7 @@ table 50136 PTEBCFTPDownloadedFile
 
     local procedure ViewFileContents(PageFileContent: Text; PageFilename: Text);
     var
-        FileContents: Page PTEBCDSFtpFileContent;
+        FileContents: Page DBCSFtpFileContentPTE;
         PageCaptionLbl: Label 'Contents of - %1', Comment = '%1 - Filename|Foldername';
     begin
         FileContents.Caption(StrSubstNo(PageCaptionLbl, PageFilename));

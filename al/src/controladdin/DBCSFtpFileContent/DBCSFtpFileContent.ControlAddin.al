@@ -1,4 +1,4 @@
-controladdin PTEBCDSFtpFileContent
+controladdin DBCSFtpFileContentPTE
 {
     MinimumWidth = 250;
     MinimumHeight = 250;

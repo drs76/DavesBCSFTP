@@ -1,9 +1,9 @@
-codeunit 50137 PTEBCDSftpParams
+codeunit 50137 DBCSftpParamsPTE
 {
 
     var
-        SFtpFileBuffer: Record PTEBCSftpFileBuffer;
-        SftpClientMgt: Codeunit PTEBCDSftpFileMgt;
+        SFtpFileBuffer: Record DBCSftpFileBufferPTE;
+        SftpClientMgt: Codeunit DBCSftpFileMgtPTE;
         JSettings: JsonObject;
         CurrentFolder: Code[2048];
         ParentFolder: Code[2048];
@@ -50,15 +50,15 @@ codeunit 50137 PTEBCDSftpParams
         this.SFtpFileBuffer.AddEntry(Id, FileObject);
     end;
 
-    internal procedure AddToFileBuffer(NewBuffer: Record PTEBCSftpFileBuffer)
+    internal procedure AddToFileBuffer(NewBuffer: Record DBCSftpFileBufferPTE)
     begin
         this.SFtpFileBuffer := NewBuffer;
         this.SFtpFileBuffer.Insert(true);
     end;
 
-    internal procedure GetFileBuffer(var NewFileBuffer: Record PTEBCSftpFileBuffer) ReturnValue: Boolean
+    internal procedure GetFileBuffer(var NewFileBuffer: Record DBCSftpFileBufferPTE) ReturnValue: Boolean
     var
-        NewFileBuffer2: Record PTEBCSftpFileBuffer;
+        NewFileBuffer2: Record DBCSftpFileBufferPTE;
     begin
         NewFileBuffer.Reset();
         NewFileBuffer.DeleteAll(true);

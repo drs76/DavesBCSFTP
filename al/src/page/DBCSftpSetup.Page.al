@@ -1,10 +1,10 @@
-page 50140 PTEBCDSftpSetup
+page 50140 DBCSftpSetupPTE
 {
     ApplicationArea = All;
     AdditionalSearchTerms = 'BC Sftp,Daves,Setup,Ftp';
     Caption = 'Daves BC Sftp Setup';
     PageType = Card;
-    SourceTable = PTEBCSftpSetup;
+    SourceTable = DBCSftpSetupPTE;
     UsageCategory = Administration;
 
     layout
@@ -63,17 +63,27 @@ page 50140 PTEBCDSftpSetup
 
     [NonDebuggable]
     local procedure LoadSecrets()
+    var
+        SecretKey: SecretText;
     begin
-        Rec.GetFunctionKey(this.FunctionKey);
+        Rec.GetFunctionKey(SecretKey);
+        if not SecretKey.IsEmpty() then
+            this.FunctionKey := this.SecretIsSetTok;
     end;
 
     [NonDebuggable]
     local procedure SaveSecrets()
+    var
+        SecretKey: SecretText;
     begin
-        Rec.SetFunctionKey(this.FunctionKey);
+        if (this.FunctionKey = '') or (this.FunctionKey = this.SecretIsSetTok) then
+            exit;
+        SecretKey := this.FunctionKey;
+        Rec.SetFunctionKey(SecretKey);
+        this.FunctionKey := this.SecretIsSetTok;
     end;
 
     var
-        [NonDebuggable]
-        FunctionKey: SecretText;
+        FunctionKey: Text;
+        SecretIsSetTok: Label '●●●●●●●●', Locked = true;
 }

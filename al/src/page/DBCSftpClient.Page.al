@@ -1,4 +1,4 @@
-page 50136 PTEBCDSftpClient
+page 50136 DBCSftpClientPTE
 {
     Caption = 'Daves Sftp Client';
     AdditionalSearchTerms = 'BC FTP';
@@ -23,7 +23,7 @@ page 50136 PTEBCDSftpClient
                     Caption = 'FTP Host';
                     ToolTip = 'Specifies the FTP Host to connect with.';
                     ApplicationArea = All;
-                    TableRelation = PTEBCSFtpHost where(Enabled = const(true));
+                    TableRelation = DBCSFtpHostPTE where(Enabled = const(true));
 
                     trigger OnValidate()
                     begin
@@ -39,7 +39,7 @@ page 50136 PTEBCDSftpClient
                 }
             }
 
-            part(BCFtpFiles; PTEBCDSFtpClientFilesPart)
+            part(BCFtpFiles; DBCSFtpClientFilesPartPTE)
             {
                 Editable = false;
                 ApplicationArea = All;
@@ -64,7 +64,7 @@ page 50136 PTEBCDSftpClient
                     PromotedCategory = Process;
                     PromotedOnly = true;
 
-                    RunObject = Page PTEBCDSFtpHosts;
+                    RunObject = Page DBCSFtpHostsPTE;
                 }
             }
 
@@ -103,18 +103,18 @@ page 50136 PTEBCDSftpClient
 
                 trigger OnAction()
                 var
-                    DownloadedFiles: Record PTEBCFTPDownloadedFile;
+                    DownloadedFiles: Record DBCFTPDownloadedFilePTE;
                 begin
                     DownloadedFiles.Reset();
                     DownloadedFiles.SetRange(FtpHost, this.FtpHost);
-                    Page.RunModal(Page::PTEBCDSftpDownloadedFiles, DownloadedFiles);
+                    Page.RunModal(Page::DBCSftpDownloadedFilesPTE, DownloadedFiles);
                 end;
             }
         }
     }
 
     var
-        BCFtpClientMgt: Codeunit PTEBCDSftpFileMgt;
+        BCFtpClientMgt: Codeunit DBCSftpFileMgtPTE;
         JSettings: JsonObject;
         FtpHost: Text;
         FtpFolder: Text;
@@ -135,13 +135,15 @@ page 50136 PTEBCDSftpClient
 
     local procedure OnValidateHost()
     var
-        BCFtpHost: Record PTEBCSFtpHost;
-        FtpHostMgt: Codeunit PTEBCDSFtpHostMgt;
+        BCFtpHost: Record DBCSFtpHostPTE;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
+        Pwd: SecretText;
+        SslCert: SecretText;
     begin
         Clear(this.JSettings);
         Clear(this.FtpFolder);
         if BCFtpHost.Get(this.FtpHost) then begin
-            FtpHostMgt.GetHostDetails(this.FtpHost, this.JSettings);
+            FtpHostMgt.GetHostDetails(this.FtpHost, this.JSettings, Pwd, SslCert);
             this.FtpFolder := BCFtpHost.RootFolder;
             this.UpdateSettings();
         end;

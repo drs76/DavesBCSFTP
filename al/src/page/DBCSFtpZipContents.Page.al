@@ -1,4 +1,4 @@
-page 50138 PTEBCDSFtpZipContents
+page 50138 DBCSFtpZipContentsPTE
 {
     Caption = 'Ftp Zip File Contents';
     PromotedActionCategories = 'New,Zip Entry,''';
@@ -68,7 +68,7 @@ page 50138 PTEBCDSFtpZipContents
     }
 
     var
-        PageDownLoadedFile: Record PTEBCFTPDownloadedFile;
+        PageDownLoadedFile: Record DBCFTPDownloadedFilePTE;
 
 
     /// <summary>
@@ -76,7 +76,7 @@ page 50138 PTEBCDSFtpZipContents
     /// </summary>
     /// <param name="FilesList">List of [Text].</param>
     /// <param name="DownloadedFile">Record PTEBCFTPDownloadedFile.</param>
-    internal procedure SetFileList(FilesList: List of [Text]; DownloadedFile: Record PTEBCFTPDownloadedFile)
+    internal procedure SetFileList(FilesList: List of [Text]; DownloadedFile: Record DBCFTPDownloadedFilePTE)
     var
         Filename: Text;
     begin
