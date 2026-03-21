@@ -14,15 +14,14 @@ DavesBCSftp - C# Azure Function Project, can be published to Azure or ran in loc
 
 ## Functionality
 
-Add, Edit and Delete hosts.
+For full documentation please see the **[Wiki](../../wiki)**.
 
-Download files and folders.
-zu
-Functionality provided to downloaded single | multiple files, and folders.
-
-* Downloaded Files table allows the contents to be processed within Business Central.
-
-* Downloaded folders are compressed to a zip format, and entries can be extracted and viewed via the client.
+- Add, edit and delete SFTP hosts
+- Browse remote folders and navigate the directory tree
+- Download single files, multiple files, or entire folders (compressed to zip)
+- Built-in file viewer for text, JSON, XML, CSV, images, PDFs and Excel workbooks
+- Downloaded files are stored in BC and can be viewed, re-downloaded or deleted at any time
+- Downloaded folders are compressed to zip format; individual entries can be extracted and viewed within the client
 
 ## Architecture Flow
 
