@@ -20,7 +20,7 @@ page 50139 DBCSFtpFileContentPTE
                 trigger ControlReady()
                 begin
                     CurrPage.fileContent.Init();
-                    CurrPage.fileContent.Load(this.FileContent);
+                    CurrPage.fileContent.Load(this.FileContent, this.Filename);
                     CurrPage.Update(false);
                 end;
             }

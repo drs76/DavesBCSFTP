@@ -8,12 +8,12 @@ controladdin DBCSFtpFileContentPTE
     VerticalShrink = true;
     HorizontalStretch = true;
     HorizontalShrink = true;
-    Scripts = 'src/controladdins/filecontent/scripts/fileContent.js';
-    StartupScript = 'src/controladdins/filecontent/scripts/fileContentStart.js';
+    Scripts = 'src/controladdin/DBCSFtpFileContent/fileContent.js';
+    StartupScript = 'src/controladdin/DBCSFtpFileContent/fileContentStart.js';
 
     event ControlReady();
 
     procedure Init();
 
-    procedure Load(data: Text);
+    procedure Load(data: Text; filename: Text);
 }

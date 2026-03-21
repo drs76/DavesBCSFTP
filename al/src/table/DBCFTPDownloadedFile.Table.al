@@ -75,7 +75,7 @@ table 50136 DBCFTPDownloadedFilePTE
     begin
         NewFileName := BCSftpFileBuffer.FullFileName;
         FtpClientMgt.TextToFromLastSlash(NewFileName, true);
-        TempBlob.CreateInStream(ReadStream, TextEncoding::UTF8);
+        TempBlob.CreateInStream(ReadStream);
 
         FtpDownloadedFiles.Init();
         FtpDownloadedFiles.Filename := CopyStr(NewFileName, 1, MaxStrLen(FtpDownloadedFiles.Filename));
@@ -128,32 +128,26 @@ table 50136 DBCFTPDownloadedFilePTE
     internal procedure ExtractAndViewCompressedEntry(EntryFilename: Text)
     var
         TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
         ReadStream: InStream;
-        FileContentToView: Text;
     begin
         this.ExtractZipEntry(EntryFilename, TempBlob);
 
         TempBlob.CreateInStream(ReadStream);
-        if ReadStream.Read(FileContentToView) = 0 then
-            exit;
-
-        this.ViewFileContents(FileContentToView, EntryFilename);
+        this.ViewFileContents(Base64Convert.ToBase64(ReadStream), EntryFilename);
     end;
 
     internal procedure ViewFileContents()
     var
         TenantMedia: Record "Tenant Media";
+        Base64Convert: Codeunit "Base64 Convert";
         ReadStream: InStream;
-        FileContentToView: Text;
     begin
         if not this.GetTenantMedia(TenantMedia) then
             exit;
 
-        TenantMedia.Content.CreateInStream(ReadStream, TextEncoding::UTF8);
-        if ReadStream.Read(FileContentToView) = 0 then
-            exit;
-
-        this.ViewFileContents(FileContentToView, Rec.Filename);
+        TenantMedia.Content.CreateInStream(ReadStream);
+        this.ViewFileContents(Base64Convert.ToBase64(ReadStream), Rec.Filename);
     end;
 
     local procedure GetTenantMedia(var TenantMedia: Record "Tenant Media") ReturnValue: Boolean

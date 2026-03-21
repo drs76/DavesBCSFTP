@@ -141,8 +141,8 @@ codeunit 50136 DBCSftpFileMgtPTE
             exit;
 
         JToken := this.GetFileContents(FileContent);
-        TempBlob.CreateOutStream(WriteStream, TextEncoding::UTF8);
-        WriteStream.WriteText(Base64Convert.FromBase64(JToken.AsValue().AsText()));
+        TempBlob.CreateOutStream(WriteStream);
+        Base64Convert.FromBase64(JToken.AsValue().AsText(), WriteStream);
 
         ReturnValue := true;
     end;
