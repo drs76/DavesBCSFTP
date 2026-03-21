@@ -9,6 +9,7 @@
 # Temp files
 .vs/
 .vscode/rad.json
+.vscode/launch.json
 
 # Others
 ~$*
@@ -17,3 +18,4 @@
 
 # snapshot files
 .snapshots/
+.claud/

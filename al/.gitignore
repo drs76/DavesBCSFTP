@@ -19,3 +19,5 @@
 
 # snapshot files
 .snapshots/
+
+local.settings.json

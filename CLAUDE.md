@@ -61,7 +61,7 @@ BC27 extension (platform 27.0.0.0, runtime 16.0, no dependencies).
 | `DBCSFtpMgt` (50134) | HTTP layer — builds requests, sends to Azure Function, parses responses |
 | `DBCSftpFileMgt` (50136) | File/folder download orchestration, stores results to `DBCFTPDownloadedFile` |
 | `DBCSFtpHostMgt` | Host record management, retrieves secrets (password, SSL cert) |
-| `DBCSftpParams` | Builds the JSON settings object passed to `DBCSFtpMgt` |
+| `DBCSftpParams` | Tracks `CurrentFolder` state, provides `NavigateToFolder` / `NavigateUpFolder` / `GetParentFolder` |
 
 **Key tables:**
 
@@ -72,9 +72,22 @@ BC27 extension (platform 27.0.0.0, runtime 16.0, no dependencies).
 | `DBCSftpFileBuffer` | Temporary buffer of files/folders from a `ListFiles` call |
 | `DBCFTPDownloadedFile` | Persistent store of downloaded file contents (blob) |
 
-**Request flow:** BC pages call `DBCSftpFileMgt` → `DBCSFtpMgt.BuildRequest` assembles JSON settings + auth headers → POST to `BCSftp` Azure Function → response parsed and stored/displayed.
+**Request flow:** BC pages call `DBCSftpFileMgt` → `DBCSFtpMgt.BuildRequest` assembles JSON settings + auth headers → `HttpClient.Send(HttpRequest)` to `BCSftp` Azure Function → response parsed and stored/displayed.
 
 **Secrets:** SFTP password and SSL cert are stored in BC as `SecretText` on the host record and injected as `x-sftp-password` / `x-sftp-sslcert` headers at request time. The Azure Function key is stored in `DBCSftpSetup` as a secret.
+
+**Critical implementation notes:**
+
+- `DBCSFtpMgt.SendRequest` uses `HttpClient.Send(this.HttpRequest, response)` — NOT `HttpClient.Post(url, content, response)`. The `Post` overload ignores the headers set on `HttpRequest`; all three auth headers would be silently dropped.
+- `DBCSftpFileMgt.DownloadFtpFile` writes file bytes using `Base64Convert.FromBase64(base64, OutStream)` (stream overload) — NOT `WriteText(Base64Convert.FromBase64(text))`. The text overload corrupts binary files (images, PDFs, Excel etc.).
+- `DBCFTPDownloadedFile.CreateEntry` opens the TempBlob with `CreateInStream(ReadStream)` — no `TextEncoding` parameter. Adding `TextEncoding::UTF8` corrupts binary data passed to `Media.ImportStream`.
+- `DBCSftpParams` tracks `CurrentFolder` (seeded from `SetRootFolder`). Navigation computes parent paths via `GetParentFolder` (last-slash stripping) rather than reading `ParentFolderName` from the selected record.
+
+**File viewer control add-in:**
+
+Scripts are at `al/src/controladdin/DBCSFtpFileContent/`. The `Load(data: Text; filename: Text)` procedure receives Base64-encoded file content and the filename. The JS selects the renderer from the extension: `<pre>` for text, `<img data:>` for images, `<embed blob:>` for PDF, HTML table for CSV, SheetJS for Excel (loaded on demand from cdnjs).
+
+**Wiki documentation:** `docs/wiki/` — six pages covering Setup, Hosts, Client, Downloaded Files, File Viewer, and Azure Function Deployment.
 
 ## Architecture Flow
 
