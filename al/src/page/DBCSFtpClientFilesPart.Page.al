@@ -132,18 +132,25 @@ page 50133 DBCSFtpClientFilesPartPTE
     begin
         this.SftpParams.SetSettings(NewJSettings);
         this.JSettings := NewJSettings;
-        if NewJSettings.Get(RootFolderLbl, JToken) then begin
-            this.SftpParams.SetRootFolder(CopyStr(JToken.AsValue().AsText().ToUpper(), 1, 2048));
-            this.SftpParams.SetCurrentFolder(CopyStr(JToken.AsValue().AsText().ToUpper(), 1, 2048));
-        end else
+        if not NewJSettings.Get(RootFolderLbl, JToken) then
             Error('No root defined');
+
+        this.SftpParams.SetRootFolder(CopyStr(JToken.AsValue().AsText().ToUpper(), 1, 2048));
     end;
 
     internal procedure SetSource(NewSource: JsonArray)
+    var
+        TSTPage: Page TestPasgePtePTE;
     begin
         Rec.Reset();
+        Rec.DeleteAll();
+
         this.BCFtpClientMgt.SetFtpFilesSource(this.SftpParams, NewSource);
         this.SftpParams.GetFileBuffer(Rec);
+
+        TSTPage.SetRecs(Rec);
+        TSTPage.RunModal();
+
         Rec.SetFilter(ParentFoldername, this.SftpParams.GetRootFolder());
         CurrPage.Update(false);
     end;
@@ -168,15 +175,13 @@ page 50133 DBCSFtpClientFilesPartPTE
 
     local procedure NavigateUp()
     begin
-        this.SftpParams.NavigateUpFolder();
-        this.SftpParams.GetFileBuffer(Rec);
+        this.SftpParams.NavigateUpFolder(Rec);
         CurrPage.Update(false);
     end;
 
     local procedure NavigateDown()
     begin
-        this.SftpParams.NavigateToFolder(Rec.FullFileName);
-        this.SftpParams.GetFileBuffer(Rec);
+        this.SftpParams.NavigateToFolder(Rec.FolderName, Rec);
         CurrPage.Update(false);
     end;
 

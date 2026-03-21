@@ -65,12 +65,12 @@ codeunit 50134 DBCSFtpMgtPTE
         this.AddToSettings(JSettings, this.TextTypesLbl, this.SFtpSetup.TreatAsTextFiles);
     end;
 
-    [NonDebuggable]
+    //[NonDebuggable]
     local procedure BuildRequest(JSettings: JsonObject; Function: Text)
     var
         BCSftpSetup: Record DBCSftpSetupPTE;
         FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
-        HttpHeaders: HttpHeaders;
+        RequestHeaders: HttpHeaders;
         FunctionKey: SecretText;
         Pwd: SecretText;
         SslCert: SecretText;
@@ -92,25 +92,23 @@ codeunit 50134 DBCSFtpMgtPTE
         this.HttpRequest.Content.WriteFrom(SettingsString);
         this.HttpRequest.SetRequestUri(StrSubstNo(UrlTxt, BCSftpSetup."Azure Sftp Host", Function));
 
-        this.HttpRequest.GetHeaders(HttpHeaders);
+        this.HttpRequest.GetHeaders(RequestHeaders);
         BCSftpSetup.GetFunctionKey(FunctionKey);
         if not FunctionKey.IsEmpty() then
-            HttpHeaders.Add(this.FunctionsKeyHeaderTok, FunctionKey);
+            RequestHeaders.Add(this.FunctionsKeyHeaderTok, FunctionKey);
         if not Pwd.IsEmpty() then
-            HttpHeaders.Add(this.SftpPasswordHeaderTok, Pwd);
+            RequestHeaders.Add(this.SftpPasswordHeaderTok, Pwd);
         if not SslCert.IsEmpty() then
-            HttpHeaders.Add(this.SftpSslCertHeaderTok, SslCert);
+            RequestHeaders.Add(this.SftpSslCertHeaderTok, SslCert);
     end;
 
     local procedure SendRequest() ReturnValue: Text
     var
-        HttpContent: HttpContent;
         HttpResponse: HttpResponseMessage;
         JObject: JsonObject;
     begin
         Clear(this.HttpClient);
-        HttpContent := this.HttpRequest.Content();
-        if not this.HttpClient.Post(this.HttpRequest.GetRequestUri(), HttpContent, HttpResponse) then begin
+        if not this.HttpClient.Send(this.HttpRequest, HttpResponse) then begin
             JObject.Add(this.HttpStatusLbl, HttpResponse.HttpStatusCode());
             JObject.Add(this.HttpStatusOkLbl, false);
             JObject.Add(this.ResponseLbl, GetLastErrorText());

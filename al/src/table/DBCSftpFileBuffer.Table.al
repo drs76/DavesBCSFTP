@@ -75,10 +75,12 @@ table 50138 DBCSftpFileBufferPTE
         }
     }
 
-    internal procedure AddEntry(Id: Integer; FtpFile: JsonObject)
+    internal procedure AddEntry(Id: Integer; FtpFile: JsonObject; RootFolder: Text)
     var
         FileMgt: Codeunit "File Management";
+        SftpFileMgt: Codeunit DBCSftpFileMgtPTE;
         JToken: JsonToken;
+        Parent: Text;
         FoldernameLbl: Label 'foldername';
         ParentFoldernameLbl: Label 'parentFolder';
         FullnameLbl: Label 'fullname';
@@ -90,8 +92,12 @@ table 50138 DBCSftpFileBufferPTE
         Rec.EntryNo := Id;
         FtpFile.Get(FoldernameLbl, JToken);
         Rec.FolderName := CopyStr(JToken.AsValue().AsText(), 1, MaxStrLen(Rec.FolderName));
+        if StrLen(Rec.FolderName) = 0 then
+            Rec.FolderName := CopyStr(RootFolder, 1, MaxStrLen(Rec.FolderName));
+
         FtpFile.Get(ParentFoldernameLbl, JToken);
         Rec.ParentFolderName := CopyStr(JToken.AsValue().AsText(), 1, MaxStrLen(Rec.ParentFolderName));
+
         FtpFile.Get(FullnameLbl, JToken);
         Rec.FullFileName := CopyStr(JToken.AsValue().AsText(), 1, MaxStrLen(Rec.FullFileName));
         FtpFile.Get(NameLbl, JToken);
@@ -100,6 +106,15 @@ table 50138 DBCSftpFileBufferPTE
         Rec.Size := Jtoken.AsValue().AsInteger();
         FtpFile.Get(FolderLbl, JToken);
         Rec.IsDirectory := Jtoken.AsValue().AsBoolean();
+        if Rec.IsDirectory then
+            if Rec.ParentFolderName = Rec.FolderName then begin
+                Parent := Rec.ParentFolderName;
+                SftpFileMgt.TextToFromLastSlash(Parent, false);
+                Rec.ParentFolderName := CopyStr(Parent, 1, MaxStrLen(Rec.ParentFolderName));
+            end;
+        if StrLen(Rec.ParentFolderName) = 0 then
+            Rec.ParentFolderName := CopyStr(RootFolder, 1, MaxStrLen(Rec.ParentFolderName));
+
         if not Rec.IsDirectory then begin
             Rec.SortOrder := 10;
             Rec.Extension := CopyStr(FileMgt.GetExtension(Rec.FullFileName), 1, MaxStrLen(Rec.Extension));
