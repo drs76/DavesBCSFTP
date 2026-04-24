@@ -1,3 +1,8 @@
+namespace DaveSinclair.DavesBCSFTP;
+
+using System.Text;
+using System.Utilities;
+
 codeunit 50136 DBCSftpFileMgtPTE
 {
     var
@@ -119,6 +124,42 @@ codeunit 50136 DBCSftpFileMgtPTE
             ReturnValue := CopyStr(ReturnValue, 1, StrLen(ReturnValue) - 1);
     end;
 
+    internal procedure UploadFiles(JSettings: JsonObject; TargetFolder: Text; Files: List of [FileUpload])
+    var
+        FtpHost: Record DBCSFtpHostPTE;
+        BCFtpMgt: Codeunit DBCSFtpMgtPTE;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
+        Base64Convert: Codeunit "Base64 Convert";
+        CurrentFile: FileUpload;
+        FileInStream: InStream;
+        FileBase64: Text;
+        EncryptedBase64: Text;
+        HostCode: Text;
+        UploadingLbl: Label 'Uploading..';
+    begin
+        HostCode := FtpHostMgt.GetHostCode(JSettings);
+        FtpHost.Get(HostCode);
+
+        this.OpenProgress(ProgressFilesMsg);
+        foreach CurrentFile in Files do begin
+            this.UpdateProgress(1, CurrentFile.FileName);
+            this.UpdateProgress(2, UploadingLbl);
+
+            CurrentFile.CreateInStream(FileInStream);
+            FileBase64 := Base64Convert.ToBase64(FileInStream);
+
+            if (FtpHost."File Encryption Mode" = FtpHost."File Encryption Mode"::PGP)
+                and FtpHost."Auto Encrypt Upload"
+            then
+                EncryptedBase64 := BCFtpMgt.EncryptFile(JSettings, FileBase64)
+            else
+                EncryptedBase64 := FileBase64;
+
+            BCFtpMgt.UploadFile(JSettings, CurrentFile.FileName, TargetFolder, EncryptedBase64);
+        end;
+        this.CloseProgress();
+    end;
+
     internal procedure SetFtpFilesSource(var SftpParams: Codeunit DBCSftpParamsPTE; NewSource: JsonArray)
     var
         JToken: JsonToken;
@@ -130,20 +171,38 @@ codeunit 50136 DBCSftpFileMgtPTE
 
     local procedure DownloadFtpFile(var JSettings: JsonObject; var BCFtpFileBuffer: Record DBCSftpFileBufferPTE; var TempBlob: Codeunit "Temp Blob") ReturnValue: Boolean
     var
+        FtpHost: Record DBCSFtpHostPTE;
         BCFtpMgt: Codeunit DBCSFtpMgtPTE;
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
         Base64Convert: Codeunit "Base64 Convert";
         WriteStream: OutStream;
         JToken: JsonToken;
         FileContent: Text;
+        FileBase64: Text;
+        HostCode: Text;
+        HasPublic: Boolean;
+        HasPrivate: Boolean;
     begin
         FileContent := BCFtpMgt.DownLoadFile(JSettings, BCFtpFileBuffer.FullFileName);
         if StrLen(FileContent) = 0 then
             exit;
 
         JToken := this.GetFileContents(FileContent);
-        TempBlob.CreateOutStream(WriteStream);
-        Base64Convert.FromBase64(JToken.AsValue().AsText(), WriteStream);
+        FileBase64 := JToken.AsValue().AsText();
 
+        HostCode := FtpHostMgt.GetHostCode(JSettings);
+        if HostCode <> '' then
+            if FtpHost.Get(HostCode) then
+                if (FtpHost."File Encryption Mode" = FtpHost."File Encryption Mode"::PGP)
+                    and FtpHost."Auto Decrypt Download"
+                then begin
+                    FtpHostMgt.HasPgpKeys(HostCode, HasPublic, HasPrivate);
+                    if HasPrivate then
+                        FileBase64 := BCFtpMgt.DecryptFile(JSettings, FileBase64);
+                end;
+
+        TempBlob.CreateOutStream(WriteStream);
+        Base64Convert.FromBase64(FileBase64, WriteStream);
         ReturnValue := true;
     end;
 

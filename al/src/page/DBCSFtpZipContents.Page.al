@@ -1,3 +1,7 @@
+namespace DaveSinclair.DavesBCSFTP;
+
+using Microsoft.Utilities;
+
 page 50138 DBCSFtpZipContentsPTE
 {
     Caption = 'Ftp Zip File Contents';

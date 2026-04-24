@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50136 DBCSftpClientPTE
 {
     Caption = 'Daves Sftp Client';

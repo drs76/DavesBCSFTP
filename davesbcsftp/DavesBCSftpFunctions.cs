@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Newtonsoft.Json;
+using PgpCore;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
 
@@ -17,6 +18,9 @@ public class DavesBCSftpFunctions()
     const string ConstDownloadFolder = "DownloadFolder";
     const string ConstDownloadFile = "DownloadFile";
     const string ConstListFiles = "ListFiles";
+    const string ConstUploadFile = "UploadFile";
+    const string ConstEncryptFile = "EncryptFile";
+    const string ConstDecryptFile = "DecryptFile";
     private const string InvalidAction = "Invalid action";
     private const string FileContentType = "application/octet-stream";
 
@@ -39,7 +43,13 @@ public class DavesBCSftpFunctions()
         action ??= ftpSetup?.action;
 
         if (action == null)
-            return new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+            return new BadRequestObjectResult("Please pass an action on the query string or in the request body");
+
+        // Crypto actions are stateless — no SFTP connection required
+        if (action == ConstEncryptFile)
+            return await EncryptFile(ftpSetup);
+        if (action == ConstDecryptFile)
+            return await DecryptFile(ftpSetup);
 
         string password = req.Headers["x-sftp-password"].ToString();
         string sslCert = req.Headers["x-sftp-sslcert"].ToString();
@@ -56,6 +66,7 @@ public class DavesBCSftpFunctions()
                 ConstDownloadFolder => await DownloadFolderAsync(client, ftpSetup, cancellationToken),
                 ConstRemoveFile => await RemoveFile(client, ftpSetup),
                 ConstRemoveFolder => await RemoveFolder(client, ftpSetup),
+                ConstUploadFile => UploadFile(client, ftpSetup),
                 _ => new BadRequestObjectResult(InvalidAction),
             };
         }
@@ -81,6 +92,85 @@ public class DavesBCSftpFunctions()
         };
         client.Connect();
         return client;
+    }
+
+    private static IActionResult UploadFile(SftpClient client, dynamic ftpSetup)
+    {
+        string fileName = ftpSetup?.fileName?.ToString()
+            ?? throw new InvalidOperationException("fileName is required");
+        string folderName = ftpSetup?.folderName?.ToString() ?? string.Empty;
+        string fileContentBase64 = ftpSetup?.fileContent?.ToString()
+            ?? throw new InvalidOperationException("fileContent is required");
+
+        string targetPath = string.IsNullOrEmpty(folderName)
+            ? fileName
+            : folderName.TrimEnd('/') + "/" + fileName;
+
+        byte[] fileBytes = Convert.FromBase64String(fileContentBase64);
+        client.WriteAllBytes(targetPath, fileBytes);
+
+        return new OkObjectResult(new { success = true, message = $"File {fileName} uploaded successfully." });
+    }
+
+    private static async Task<IActionResult> EncryptFile(dynamic ftpSetup)
+    {
+        try
+        {
+            string pgpPublicKey = ftpSetup?.pgpPublicKey?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(pgpPublicKey))
+                return new BadRequestObjectResult("pgpPublicKey is required in the request body");
+
+            string fileContentBase64 = ftpSetup?.fileContent?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(fileContentBase64))
+                return new BadRequestObjectResult("fileContent is required in the request body");
+
+            byte[] fileBytes = Convert.FromBase64String(fileContentBase64);
+
+            using var publicKeyStream = new MemoryStream(Encoding.UTF8.GetBytes(pgpPublicKey));
+            var encryptionKeys = new EncryptionKeys(publicKeyStream);
+            var pgp = new PGP(encryptionKeys);
+
+            using var inputStream = new MemoryStream(fileBytes);
+            using var outputStream = new MemoryStream();
+            await pgp.EncryptStreamAsync(inputStream, outputStream);
+
+            return new OkObjectResult(new { fileContent = Convert.ToBase64String(outputStream.ToArray()) });
+        }
+        catch (Exception ex)
+        {
+            return new BadRequestObjectResult($"Encryption failed: {ex.Message}");
+        }
+    }
+
+    private static async Task<IActionResult> DecryptFile(dynamic ftpSetup)
+    {
+        try
+        {
+            string pgpPrivateKey = ftpSetup?.pgpPrivateKey?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(pgpPrivateKey))
+                return new BadRequestObjectResult("pgpPrivateKey is required in the request body");
+
+            string fileContentBase64 = ftpSetup?.fileContent?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(fileContentBase64))
+                return new BadRequestObjectResult("fileContent is required in the request body");
+
+            string passPhrase = ftpSetup?.pgpPassphrase?.ToString() ?? string.Empty;
+            byte[] encryptedBytes = Convert.FromBase64String(fileContentBase64);
+
+            using var privateKeyStream = new MemoryStream(Encoding.UTF8.GetBytes(pgpPrivateKey));
+            var encryptionKeys = new EncryptionKeys(privateKeyStream, passPhrase);
+            var pgp = new PGP(encryptionKeys);
+
+            using var inputStream = new MemoryStream(encryptedBytes);
+            using var outputStream = new MemoryStream();
+            await pgp.DecryptStreamAsync(inputStream, outputStream);
+
+            return new OkObjectResult(new { fileContent = Convert.ToBase64String(outputStream.ToArray()) });
+        }
+        catch (Exception ex)
+        {
+            return new BadRequestObjectResult($"Decryption failed: {ex.Message}");
+        }
     }
 
     private static async Task<IActionResult> ListFiles(SftpClient client, dynamic ftpSetup, CancellationToken cancellationToken)

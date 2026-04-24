@@ -1,0 +1,127 @@
+namespace SinclairSoftScotland.BCSimpleSFTP;
+
+table 58550 SSSSFtpHostPTE
+{
+    Caption = 'Daves Sftp Host';
+    DataClassification = CustomerContent;
+
+    fields
+    {
+        field(1; Name; Code[250])
+        {
+            Caption = 'Name';
+            DataClassification = CustomerContent;
+        }
+
+        field(2; RootFolder; Text[2048])
+        {
+            Caption = 'Root Folder';
+            DataClassification = CustomerContent;
+            InitValue = '/';
+        }
+
+        field(3; Enabled; Boolean)
+        {
+            Caption = 'Enabled';
+            DataClassification = CustomerContent;
+        }
+
+        field(4; SSLSetting; Enum PTEBCFTPSSLSetttings)
+        {
+            Caption = 'SSL';
+            DataClassification = CustomerContent;
+            InitValue = Default;
+        }
+
+        field(5; Encryption; Enum PTEBCFTPEncryptionSettings)
+        {
+            Caption = 'Encryption';
+            DataClassification = CustomerContent;
+            InitValue = Auto;
+        }
+
+        field(6; ValidationCertificate; Enum PTEBCFTPValidationCertificate)
+        {
+            Caption = 'Certificate Validation';
+            DataClassification = CustomerContent;
+            InitValue = ValidateAnyCertificate;
+        }
+
+        field(7; ValidateCertificateRevocation; Boolean)
+        {
+            Caption = 'Validate Certificate Revocation';
+            DataClassification = CustomerContent;
+            InitValue = false;
+        }
+
+        field(8; SSLBuffering; Boolean)
+        {
+            Caption = 'SSL Buffering';
+            DataClassification = CustomerContent;
+            InitValue = true;
+        }
+
+        field(9; Port; Integer)
+        {
+            Caption = 'Port';
+            DataClassification = CustomerContent;
+            InitValue = 0;
+        }
+
+        field(10; XC509Cert; Boolean)
+        {
+            Caption = 'XC509';
+            DataClassification = CustomerContent;
+        }
+
+        field(11; FingerprintSHA256; Text[512])
+        {
+            Caption = 'Host Fingerprint (SHA256)';
+            DataClassification = CustomerContent;
+            ToolTip = 'Optional SHA256 host key fingerprint for pinning. Leave blank to skip fingerprint verification.';
+        }
+
+        field(12; "File Encryption Mode"; Enum SSSSFtpFileEncryptionModePTE)
+        {
+            Caption = 'File Encryption Mode';
+            DataClassification = CustomerContent;
+        }
+
+        field(13; "Auto Encrypt Upload"; Boolean)
+        {
+            Caption = 'Auto-Encrypt Uploads';
+            DataClassification = CustomerContent;
+        }
+
+        field(14; "Auto Decrypt Download"; Boolean)
+        {
+            Caption = 'Auto-Decrypt Downloads';
+            DataClassification = CustomerContent;
+        }
+    }
+
+    keys
+    {
+        key(PK; Name)
+        {
+            Clustered = true;
+        }
+
+        key(Enabled; Enabled)
+        {
+        }
+    }
+    fieldgroups
+    {
+        fieldgroup(Brick; Name, RootFolder)
+        {
+        }
+    }
+
+    trigger OnDelete()
+    var
+        HostMgt: Codeunit SSSSFtpHostMgtPTE;
+    begin
+        HostMgt.DeleteHostDetails(Rec.Name);
+    end;
+}

@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50135 DBCSFtpHostCardPTE
 {
     Caption = 'Daves Sftp Host Card';
@@ -76,6 +78,49 @@ page 50135 DBCSFtpHostCardPTE
                 }
             }
 
+            group(EncryptionGrp)
+            {
+                Caption = 'File Encryption';
+
+                field("File Encryption Mode"; Rec."File Encryption Mode")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Mode';
+                    ToolTip = 'Select PGP to encrypt uploads and decrypt downloads for this host.';
+
+                    trigger OnValidate()
+                    begin
+                        CurrPage.Update(false);
+                    end;
+                }
+                field("Auto Encrypt Upload"; Rec."Auto Encrypt Upload")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Automatically PGP-encrypt files before uploading to this host.';
+                    Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+                }
+                field("Auto Decrypt Download"; Rec."Auto Decrypt Download")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Automatically PGP-decrypt downloaded files when a private key is configured.';
+                    Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+                }
+                field(PgpPublicKeyDisplay; this.PgpPublicKeyDisplay)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Public Key';
+                    ToolTip = 'PGP public key status. Use the Set Public Key action to configure.';
+                    Editable = false;
+                }
+                field(PgpPrivateKeyDisplay; this.PgpPrivateKeyDisplay)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Private Key';
+                    ToolTip = 'PGP private key status. Use the Set Private Key action to configure.';
+                    Editable = false;
+                }
+            }
+
             group(Options)
             {
                 field(Port; Rec.Port)
@@ -146,6 +191,64 @@ page 50135 DBCSFtpHostCardPTE
     {
         area(Processing)
         {
+            action(SetPgpPublicKey)
+            {
+                ApplicationArea = All;
+                Caption = 'Set Public Key';
+                ToolTip = 'Paste the PGP public key used to encrypt uploads.';
+                Image = Certificate;
+                Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+
+                trigger OnAction()
+                begin
+                    this.EnterPgpPublicKey();
+                end;
+            }
+
+            action(SetPgpPrivateKey)
+            {
+                ApplicationArea = All;
+                Caption = 'Set Private Key';
+                ToolTip = 'Paste the PGP private key used to decrypt downloads.';
+                Image = Certificate;
+                Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+
+                trigger OnAction()
+                begin
+                    this.EnterPgpPrivateKey();
+                end;
+            }
+
+            action(SetPgpPassphrase)
+            {
+                ApplicationArea = All;
+                Caption = 'Set Passphrase';
+                ToolTip = 'Set the passphrase for the PGP private key (leave blank if none).';
+                Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+                Image = Info;
+
+                trigger OnAction()
+                begin
+                    this.EnterPgpPassphrase();
+                end;
+            }
+
+            action(ClearPgpKeys)
+            {
+                ApplicationArea = All;
+                Caption = 'Clear PGP Keys';
+                ToolTip = 'Remove all stored PGP keys for this host.';
+                Image = Delete;
+                Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::PGP;
+
+                trigger OnAction()
+                begin
+                    this.FtpHostMgt.DeletePgpKeys(Rec.Name);
+                    this.PgpPublicKeyDisplay := this.NotSetTok;
+                    this.PgpPrivateKeyDisplay := this.NotSetTok;
+                end;
+            }
+
             action(TestConnection)
             {
                 ApplicationArea = All;
@@ -186,6 +289,8 @@ page 50135 DBCSFtpHostCardPTE
     var
         HasPwd: Boolean;
         HasSslCert: Boolean;
+        HasPublic: Boolean;
+        HasPrivate: Boolean;
     begin
         this.FtpHostMgt.GetHostDetails(Rec.Name, this.FtpHost, this.FtpUser, this.FtpPasswd, this.FtpSslCert);
         this.FtpHostMgt.HasSecrets(Rec.Name, HasPwd, HasSslCert);
@@ -193,6 +298,16 @@ page 50135 DBCSFtpHostCardPTE
             this.FtpPasswdDisplay := this.SecretIsSetTok;
         if HasSslCert then
             this.FtpSslCertDisplay := this.SecretIsSetTok;
+
+        this.FtpHostMgt.HasPgpKeys(Rec.Name, HasPublic, HasPrivate);
+        if HasPublic then
+            this.PgpPublicKeyDisplay := this.SecretIsSetTok
+        else
+            this.PgpPublicKeyDisplay := this.NotSetTok;
+        if HasPrivate then
+            this.PgpPrivateKeyDisplay := this.SecretIsSetTok
+        else
+            this.PgpPrivateKeyDisplay := this.NotSetTok;
     end;
 
     [NonDebuggable]
@@ -233,6 +348,55 @@ page 50135 DBCSFtpHostCardPTE
         end;
     end;
 
+    [NonDebuggable]
+    local procedure EnterPgpPublicKey()
+    var
+        KeyInput: Page DBCSFtpPgpKeyInputPTE;
+        KeyText: Text;
+        EmptyText: Text;
+    begin
+        KeyInput.Caption := 'PGP Public Key';
+        if KeyInput.RunModal() = Action::OK then begin
+            KeyInput.GetKeyText(KeyText);
+            if KeyText <> '' then begin
+                this.FtpHostMgt.UpdatePgpKeys(Rec.Name, KeyText, EmptyText, EmptyText);
+                this.PgpPublicKeyDisplay := this.SecretIsSetTok;
+            end;
+        end;
+    end;
+
+    [NonDebuggable]
+    local procedure EnterPgpPrivateKey()
+    var
+        KeyInput: Page DBCSFtpPgpKeyInputPTE;
+        KeyText: Text;
+        EmptyText: Text;
+    begin
+        KeyInput.Caption := 'PGP Private Key';
+        if KeyInput.RunModal() = Action::OK then begin
+            KeyInput.GetKeyText(KeyText);
+            if KeyText <> '' then begin
+                this.FtpHostMgt.UpdatePgpKeys(Rec.Name, EmptyText, KeyText, EmptyText);
+                this.PgpPrivateKeyDisplay := this.SecretIsSetTok;
+            end;
+        end;
+    end;
+
+    [NonDebuggable]
+    local procedure EnterPgpPassphrase()
+    var
+        KeyInput: Page DBCSFtpPgpKeyInputPTE;
+        PassText: Text;
+        EmptyText: Text;
+    begin
+        KeyInput.Caption := 'PGP Passphrase';
+        if KeyInput.RunModal() = Action::OK then begin
+            KeyInput.GetKeyText(PassText);
+            if PassText <> '' then
+                this.FtpHostMgt.UpdatePgpKeys(Rec.Name, EmptyText, EmptyText, PassText);
+        end;
+    end;
+
     var
         [NonDebuggable]
         FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
@@ -244,5 +408,8 @@ page 50135 DBCSFtpHostCardPTE
         [NonDebuggable]
         FtpSslCert: SecretText;
         FtpSslCertDisplay: Text;
+        PgpPublicKeyDisplay: Text;
+        PgpPrivateKeyDisplay: Text;
         SecretIsSetTok: Label '●●●●●●●●', Locked = true;
+        NotSetTok: Label '(not set)', Locked = true;
 }

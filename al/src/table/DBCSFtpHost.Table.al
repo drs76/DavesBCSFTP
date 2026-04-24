@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 table 50135 DBCSFtpHostPTE
 {
     Caption = 'Daves Sftp Host';
@@ -69,6 +71,24 @@ table 50135 DBCSFtpHostPTE
         field(10; XC509Cert; Boolean)
         {
             Caption = 'XC509';
+            DataClassification = CustomerContent;
+        }
+
+        field(11; "File Encryption Mode"; Enum BCFTPFileEncryptionModePTE)
+        {
+            Caption = 'File Encryption Mode';
+            DataClassification = CustomerContent;
+        }
+
+        field(12; "Auto Encrypt Upload"; Boolean)
+        {
+            Caption = 'Auto-Encrypt Uploads';
+            DataClassification = CustomerContent;
+        }
+
+        field(13; "Auto Decrypt Download"; Boolean)
+        {
+            Caption = 'Auto-Decrypt Downloads';
             DataClassification = CustomerContent;
         }
     }

@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 permissionset 50000 DBCSftpPermSetPTE
 {
     Assignable = true;

@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50134 DBCSFtpHostsPTE
 {
     Caption = 'Daves Sftp Hosts';

@@ -1,3 +1,7 @@
+namespace DaveSinclair.DavesBCSFTP;
+
+using System.IO;
+
 table 50138 DBCSftpFileBufferPTE
 {
     Caption = 'Sftp File Buffer';

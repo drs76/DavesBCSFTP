@@ -1,3 +1,7 @@
+namespace DaveSinclair.DavesBCSFTP;
+
+using System.Utilities;
+
 page 50139 DBCSFtpFileContentPTE
 {
     Caption = 'Daves Sftp File Content';

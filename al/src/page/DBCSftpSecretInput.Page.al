@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50141 DBCSftpSecretInputPTE
 {
     Caption = 'Enter Secret Value';

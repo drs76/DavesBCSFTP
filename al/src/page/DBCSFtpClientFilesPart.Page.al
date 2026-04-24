@@ -1,7 +1,10 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50133 DBCSFtpClientFilesPartPTE
 {
     Caption = 'Ftp Files';
     PageType = ListPart;
+    ApplicationArea = All;
     SourceTable = DBCSftpFileBufferPTE;
     SourceTableTemporary = true;
     Editable = false;
@@ -103,6 +106,21 @@ page 50133 DBCSFtpClientFilesPartPTE
                     end;
                 }
             }
+
+            fileuploadaction(UploadFiles)
+            {
+                ApplicationArea = All;
+                Caption = 'Upload';
+                ToolTip = 'Upload one or more files to the current folder on the SFTP server.';
+                AllowMultipleFiles = true;
+                Image = Import;
+
+                trigger OnAction(Files: List of [FileUpload])
+                begin
+                    this.BCFtpClientMgt.UploadFiles(this.JSettings, this.SftpParams.GetCurrentFolder(), Files);
+                    this.RefreshFiles();
+                end;
+            }
         }
     }
 
@@ -162,15 +180,15 @@ page 50133 DBCSFtpClientFilesPartPTE
 
     internal procedure DownloadFiles()
     var
-        BCSftpFileBuffer: Record DBCSftpFileBufferPTE;
+        TempSftpFileBuffer: Record DBCSftpFileBufferPTE;
     begin
         if Rec.IsDirectory or (Rec.FileName = this.UpLevelLbl) then
             exit;
 
-        BCSftpFileBuffer.Copy(Rec, true);
+        TempSftpFileBuffer.Copy(Rec, true);
 
-        CurrPage.SetSelectionFilter(BCSftpFileBuffer);
-        this.BCFtpClientMgt.DownloadFiles(this.JSettings, BCSftpFileBuffer);
+        CurrPage.SetSelectionFilter(TempSftpFileBuffer);
+        this.BCFtpClientMgt.DownloadFiles(this.JSettings, TempSftpFileBuffer);
     end;
 
     local procedure NavigateUp()
@@ -205,5 +223,10 @@ page 50133 DBCSFtpClientFilesPartPTE
             NavigateUp()
         else
             this.NavigateDown();
+    end;
+
+    local procedure RefreshFiles()
+    begin
+        CurrPage.Update(false);
     end;
 }

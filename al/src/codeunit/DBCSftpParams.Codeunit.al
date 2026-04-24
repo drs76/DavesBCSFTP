@@ -1,8 +1,10 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 codeunit 50137 DBCSftpParamsPTE
 {
 
     var
-        SFtpFileBuffer: Record DBCSftpFileBufferPTE;
+        TempSFtpFileBuffer: Record DBCSftpFileBufferPTE;
         JSettings: JsonObject;
         RootFolder: Text[2048];
         CurrentFolder: Text[2048];
@@ -18,9 +20,9 @@ codeunit 50137 DBCSftpParamsPTE
     internal procedure NavigateToFolder(NewFolder: Code[2048]; var TempPageRecord: Record DBCSftpFileBufferPTE temporary)
     begin
         this.CurrentFolder := NewFolder;
-        this.SFtpFileBuffer.Reset();
-        this.SFtpFileBuffer.SetFilter(ParentFolderName, NewFolder);
-        TempPageRecord.Copy(this.SFtpFileBuffer, true);
+        this.TempSFtpFileBuffer.Reset();
+        this.TempSFtpFileBuffer.SetFilter(ParentFolderName, NewFolder);
+        TempPageRecord.Copy(this.TempSFtpFileBuffer, true);
     end;
 
     local procedure GetParentFolder(Path: Text): Text
@@ -45,19 +47,19 @@ codeunit 50137 DBCSftpParamsPTE
 
     internal procedure ClearFileBuffer()
     begin
-        this.SFtpFileBuffer.Reset();
-        this.SFtpFileBuffer.DeleteAll(true);
+        this.TempSFtpFileBuffer.Reset();
+        this.TempSFtpFileBuffer.DeleteAll(true);
     end;
 
     internal procedure AddToFileBuffer(Id: Integer; FileObject: JsonObject)
     begin
-        this.SFtpFileBuffer.AddEntry(Id, FileObject, GetRootFolder());
+        this.TempSFtpFileBuffer.AddEntry(Id, FileObject, GetRootFolder());
     end;
 
     internal procedure AddToFileBuffer(NewBuffer: Record DBCSftpFileBufferPTE)
     begin
-        this.SFtpFileBuffer := NewBuffer;
-        this.SFtpFileBuffer.Insert(true);
+        this.TempSFtpFileBuffer := NewBuffer;
+        this.TempSFtpFileBuffer.Insert(true);
     end;
 
     internal procedure GetFileBuffer(var NewFileBuffer: Record DBCSftpFileBufferPTE) ReturnValue: Boolean
@@ -65,8 +67,8 @@ codeunit 50137 DBCSftpParamsPTE
         NewFileBuffer.Reset();
         NewFileBuffer.DeleteAll(true);
 
-        this.SFtpFileBuffer.Reset();
-        NewFileBuffer.Copy(this.SFtpFileBuffer, true);
+        this.TempSFtpFileBuffer.Reset();
+        NewFileBuffer.Copy(this.TempSFtpFileBuffer, true);
 
         NewFileBuffer.SetCurrentKey(SortOrder);
     end;
@@ -90,6 +92,11 @@ codeunit 50137 DBCSftpParamsPTE
     internal procedure GetRootFolder(): Code[2048]
     begin
         exit(this.RootFolder);
+    end;
+
+    internal procedure GetCurrentFolder(): Code[2048]
+    begin
+        exit(this.CurrentFolder);
     end;
 
 }

@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 enum 50134 PTEBCFTPSSLSetttings
 {
     Extensible = true;

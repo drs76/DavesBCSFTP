@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 enum 50136 PTEBCFTPValidationCertificate
 {
     value(0; X509)

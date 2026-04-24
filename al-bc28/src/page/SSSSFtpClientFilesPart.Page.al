@@ -1,0 +1,264 @@
+namespace SinclairSoftScotland.BCSimpleSFTP;
+
+page 58561 SSSSFtpClientFilesPartPTE
+{
+    ApplicationArea = All;
+    Caption = 'Sftp Files';
+    PageType = ListPart;
+    SourceTable = SSSSftpFileBufferPTE;
+    SourceTableTemporary = true;
+    Editable = false;
+    InsertAllowed = false;
+    DeleteAllowed = false;
+
+    layout
+    {
+        area(content)
+        {
+            repeater(General)
+            {
+                field(SortOrder; Rec.SortOrder)
+                {
+                    ApplicationArea = All;
+                    HideValue = true;
+                    Editable = false;
+                    Visible = false;
+                    ToolTip = 'Specifies the value of the Sort Order field.';
+                }
+                field(FileName; Rec.FileName)
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the file/folder name.';
+                    Caption = 'Name';
+                    Editable = false;
+                    DrillDown = true;
+                    StyleExpr = StyleTxt;
+
+                    trigger OnDrillDown()
+                    begin
+                        this.OnDrillDownName();
+                    end;
+                }
+                field(Extension; Rec.Extension)
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the value of the Type field.';
+                }
+
+                field(Size; Rec.Size)
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the file size.';
+                    Caption = 'Size';
+                    HideValue = Rec.IsDirectory;
+                    Editable = false;
+                }
+            }
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+            action(NavigateUpAction)
+            {
+                Caption = 'Up';
+                ToolTip = 'Navigate folder up.';
+                ApplicationArea = All;
+                Image = MoveUp;
+                Scope = Repeater;
+
+                trigger OnAction()
+                begin
+                    this.NavigateUp();
+                end;
+            }
+
+            action(Refresh)
+            {
+                Caption = 'Refresh';
+                ToolTip = 'Refresh the current folder listing from the SFTP server.';
+                ApplicationArea = All;
+                Image = Refresh;
+
+                trigger OnAction()
+                begin
+                    this.RefreshFiles();
+                end;
+            }
+
+            group(Download)
+            {
+                ShowAs = SplitButton;
+
+                action(DownloadFile)
+                {
+                    Caption = 'Download';
+                    ToolTip = 'Download selected file(s).';
+                    ApplicationArea = All;
+                    Image = Download;
+                    Scope = Repeater;
+
+                    trigger OnAction()
+                    begin
+                        this.DownloadFiles();
+                    end;
+                }
+                action(DownloadDirectory)
+                {
+                    Caption = 'Download Folder';
+                    ToolTip = 'Download selected folder and its contents. The folder contents will be compressed into a single file.';
+                    ApplicationArea = All;
+                    Image = Download;
+                    Scope = Repeater;
+
+                    trigger OnAction()
+                    begin
+                        this.DownloadFolder();
+                    end;
+                }
+            }
+
+            fileuploadaction(UploadFiles)
+            {
+                Caption = 'Upload';
+                ToolTip = 'Upload one or more files to the current folder on the SFTP server.';
+                ApplicationArea = All;
+                AllowMultipleFiles = true;
+                Image = Import;
+
+                trigger OnAction(Files: List of [FileUpload])
+                begin
+                    this.BCFtpClientMgt.UploadFiles(this.JSettings, this.SftpParams.GetCurrentFolder(), Files);
+                    this.RefreshFiles();
+                end;
+            }
+        }
+    }
+
+    trigger OnAfterGetCurrRecord()
+    begin
+        this.SetStyle();
+    end;
+
+    trigger OnAfterGetRecord()
+    begin
+        this.SetStyle();
+    end;
+
+
+    var
+        BCFtpClientMgt: Codeunit SSSSftpFileMgtPTE;
+        SftpParams: Codeunit SSSSftpParamsPTE;
+        JSettings: JsonObject;
+        StyleTxt: Text;
+        UpLevelLbl: Label '..';
+
+
+    internal procedure SetSettings(NewJSettings: JsonObject)
+    var
+        JToken: JsonToken;
+        RootFolderLbl: Label 'rootFolder';
+    begin
+        this.SftpParams.SetSettings(NewJSettings);
+        this.JSettings := NewJSettings;
+        if not NewJSettings.Get(RootFolderLbl, JToken) then
+            Error('No root defined');
+
+        this.SftpParams.SetRootFolder(CopyStr(JToken.AsValue().AsText().ToUpper(), 1, 2048));
+    end;
+
+    internal procedure SetSource(NewSource: JsonArray)
+    var
+        TSTPage: Page TestPasgePtePTE;
+    begin
+        Rec.Reset();
+        Rec.DeleteAll();
+
+        this.BCFtpClientMgt.SetFtpFilesSource(this.SftpParams, NewSource);
+        this.SftpParams.GetFileBuffer(Rec);
+
+        TSTPage.SetRecs(Rec);
+        TSTPage.RunModal();
+
+        Rec.SetFilter(ParentFoldername, this.SftpParams.GetRootFolder());
+        CurrPage.Update(false);
+    end;
+
+    internal procedure DownloadFolder()
+    begin
+        this.BCFtpClientMgt.DownloadFolder(this.JSettings, Rec);
+    end;
+
+    internal procedure DownloadFiles()
+    var
+        TempSftpFileBuffer: Record SSSSftpFileBufferPTE;
+    begin
+        if Rec.IsDirectory or (Rec.FileName = this.UpLevelLbl) then
+            exit;
+
+        TempSftpFileBuffer.Copy(Rec, true);
+
+        CurrPage.SetSelectionFilter(TempSftpFileBuffer);
+        this.BCFtpClientMgt.DownloadFiles(this.JSettings, TempSftpFileBuffer);
+    end;
+
+    local procedure NavigateUp()
+    begin
+        this.SftpParams.NavigateUpFolder(Rec);
+        CurrPage.Update(false);
+    end;
+
+    local procedure NavigateDown()
+    begin
+        this.SftpParams.NavigateToFolder(Rec.FolderName, Rec);
+        CurrPage.Update(false);
+    end;
+
+    local procedure SetStyle()
+    var
+        StrongLbl: Label 'StrongAccent';
+        SubordinateLbl: Label 'Subordinate';
+    begin
+        Clear(this.StyleTxt);
+        this.StyleTxt := SubordinateLbl;
+        if Rec.IsDirectory then
+            this.StyleTxt := StrongLbl;
+    end;
+
+    local procedure OnDrillDownName()
+    begin
+        if not Rec.IsDirectory then
+            exit;
+
+        if Rec.FileName = this.UpLevelLbl then
+            NavigateUp()
+        else
+            this.NavigateDown();
+    end;
+
+    local procedure RefreshFiles()
+    var
+        Source: JsonArray;
+        CurrentFolder: Code[2048];
+        JToken: JsonToken;
+        RootFolder: Text;
+        RootFolderLbl: Label 'rootFolder';
+    begin
+        if not this.JSettings.Get(RootFolderLbl, JToken) then
+            exit;
+        RootFolder := JToken.AsValue().AsText();
+        CurrentFolder := this.SftpParams.GetCurrentFolder();
+
+        Source := this.BCFtpClientMgt.GetFtpFolderFilesList(this.JSettings, RootFolder);
+        this.BCFtpClientMgt.SetFtpFilesSource(this.SftpParams, Source);
+
+        if CurrentFolder <> '' then
+            this.SftpParams.NavigateToFolder(CurrentFolder, Rec)
+        else
+            Rec.SetFilter(ParentFoldername, this.SftpParams.GetRootFolder());
+
+        CurrPage.Update(false);
+    end;
+}

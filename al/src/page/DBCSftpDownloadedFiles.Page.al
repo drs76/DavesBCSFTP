@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50137 DBCSftpDownloadedFilesPTE
 {
     ApplicationArea = All;

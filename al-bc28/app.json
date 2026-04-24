@@ -1,0 +1,35 @@
+{
+  "id": "fc19b4a0-dd2b-4c1c-b69d-c4c75b795125",
+  "name": "BCSimpleSFTP",
+  "publisher": "SinclairSoftScotland",
+  "version": "28.0.25525.0",
+  "brief": "",
+  "description": "SFTP client using BC28 native SftpClient",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "./resources/logo/logo.png",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "28.0.0.0",
+  "application": "28.0.0.0",
+  "idRanges": [
+    {
+      "from": 58550,
+      "to": 58600
+    }
+  ],
+    "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "features": [
+    "NoImplicitWith",
+    "NoPromotedActionProperties",
+    "WordAddInCompatibleLayouts"
+  ],
+  "target": "cloud",
+  "runtime": "17.0"
+}

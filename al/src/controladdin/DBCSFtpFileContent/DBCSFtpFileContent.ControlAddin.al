@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 controladdin DBCSFtpFileContentPTE
 {
     MinimumWidth = 250;

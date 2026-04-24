@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 codeunit 50134 DBCSFtpMgtPTE
 {
     var
@@ -8,9 +10,16 @@ codeunit 50134 DBCSFtpMgtPTE
         GetFileListFtpTok: Label 'ListFiles', Locked = true;
         DownloadFileFtpTok: Label 'DownloadFile', Locked = true;
         DownloadFolderFtpTok: Label 'DownloadFolder', Locked = true;
+        UploadFileFtpTok: Label 'UploadFile', Locked = true;
+        EncryptFileFtpTok: Label 'EncryptFile', Locked = true;
+        DecryptFileFtpTok: Label 'DecryptFile', Locked = true;
         ActionLbl: Label 'action', Locked = true;
         FolderNameTok: Label 'folderName', Locked = true;
         FileNameTok: Label 'fileName', Locked = true;
+        FileContentLbl: Label 'fileContent', Locked = true;
+        PgpPublicKeyLbl: Label 'pgpPublicKey', Locked = true;
+        PgpPrivateKeyLbl: Label 'pgpPrivateKey', Locked = true;
+        PgpPassphraseLbl: Label 'pgpPassphrase', Locked = true;
         ResponseLbl: Label 'response', Locked = true;
         HttpStatusLbl: Label 'httpStatus', Locked = true;
         HttpStatusOkLbl: Label 'httpStatusOk', Locked = true;
@@ -57,6 +66,63 @@ codeunit 50134 DBCSFtpMgtPTE
         this.BuildRequest(JSettings, this.DownloadFolderFtpTok);
         Result := this.SendRequest();
         Result := this.GetResult(Result);
+    end;
+
+    internal procedure UploadFile(JSettings: JsonObject; FileName: Text; FolderName: Text; FileContentBase64: Text)
+    var
+        UploadSettings: JsonObject;
+        Result: Text;
+    begin
+        UploadSettings := JSettings;
+        this.AddToSettings(UploadSettings, this.FileNameTok, FileName);
+        this.AddToSettings(UploadSettings, this.FolderNameTok, FolderName);
+        this.AddToSettings(UploadSettings, this.FileContentLbl, FileContentBase64);
+        this.AddToSettings(UploadSettings, this.ActionLbl, this.UploadFileFtpTok);
+        this.BuildRequest(UploadSettings, this.UploadFileFtpTok);
+        Result := this.SendRequest();
+        this.GetResult(Result);
+    end;
+
+    [NonDebuggable]
+    internal procedure EncryptFile(JSettings: JsonObject; FileContentBase64: Text) EncryptedBase64: Text
+    var
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
+        CryptoBody: JsonObject;
+        PubKey: Text;
+        PrivKey: Text;
+        Passphrase: Text;
+        HostCode: Text;
+        Result: Text;
+    begin
+        HostCode := FtpHostMgt.GetHostCode(JSettings);
+        FtpHostMgt.GetPgpKeys(HostCode, PubKey, PrivKey, Passphrase);
+        CryptoBody.Add(this.FileContentLbl, FileContentBase64);
+        CryptoBody.Add(this.PgpPublicKeyLbl, PubKey);
+        this.BuildCryptoRequest(CryptoBody, this.EncryptFileFtpTok);
+        Result := this.SendRequest();
+        EncryptedBase64 := this.ExtractFileContent(this.GetResult(Result));
+    end;
+
+    [NonDebuggable]
+    internal procedure DecryptFile(JSettings: JsonObject; EncryptedBase64: Text) DecryptedBase64: Text
+    var
+        FtpHostMgt: Codeunit DBCSFtpHostMgtPTE;
+        CryptoBody: JsonObject;
+        PubKey: Text;
+        PrivKey: Text;
+        Passphrase: Text;
+        HostCode: Text;
+        Result: Text;
+    begin
+        HostCode := FtpHostMgt.GetHostCode(JSettings);
+        FtpHostMgt.GetPgpKeys(HostCode, PubKey, PrivKey, Passphrase);
+        CryptoBody.Add(this.FileContentLbl, EncryptedBase64);
+        CryptoBody.Add(this.PgpPrivateKeyLbl, PrivKey);
+        if Passphrase <> '' then
+            CryptoBody.Add(this.PgpPassphraseLbl, Passphrase);
+        this.BuildCryptoRequest(CryptoBody, this.DecryptFileFtpTok);
+        Result := this.SendRequest();
+        DecryptedBase64 := this.ExtractFileContent(this.GetResult(Result));
     end;
 
     local procedure AddTextTypes(var JSettings: JsonObject)
@@ -154,6 +220,40 @@ codeunit 50134 DBCSFtpMgtPTE
 
         if JToken.IsValue() then
             exit(JToken.AsValue().AsText());
+    end;
+
+    local procedure BuildCryptoRequest(JBody: JsonObject; Action: Text)
+    var
+        BCSftpSetup: Record DBCSftpSetupPTE;
+        RequestHeaders: HttpHeaders;
+        FunctionKey: SecretText;
+        BodyString: Text;
+        UrlTxt: Label '%1?action=%2', Locked = true;
+    begin
+        BCSftpSetup.Get();
+        BCSftpSetup.TestField("Azure Sftp Host");
+
+        JBody.WriteTo(BodyString);
+
+        Clear(this.HttpRequest);
+        this.HttpRequest.Method := 'POST';
+        this.HttpRequest.Content.WriteFrom(BodyString);
+        this.HttpRequest.SetRequestUri(StrSubstNo(UrlTxt, BCSftpSetup."Azure Sftp Host", Action));
+
+        this.HttpRequest.GetHeaders(RequestHeaders);
+        BCSftpSetup.GetFunctionKey(FunctionKey);
+        if not FunctionKey.IsEmpty() then
+            RequestHeaders.Add(this.FunctionsKeyHeaderTok, FunctionKey);
+    end;
+
+    local procedure ExtractFileContent(Response: Text) Content: Text
+    var
+        JObject: JsonObject;
+        JToken: JsonToken;
+    begin
+        if JObject.ReadFrom(Response) then
+            if JObject.Get(this.FileContentLbl, JToken) then
+                Content := JToken.AsValue().AsText();
     end;
 
     local procedure AddToSettings(var Settings: JsonObject; Prop: Text; Value: Text)

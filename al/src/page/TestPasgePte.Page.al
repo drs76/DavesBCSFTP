@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 page 50150 TestPasgePtePTE
 {
     ApplicationArea = All;

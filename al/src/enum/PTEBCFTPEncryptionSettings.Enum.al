@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 enum 50135 PTEBCFTPEncryptionSettings
 {
     value(0; Auto)

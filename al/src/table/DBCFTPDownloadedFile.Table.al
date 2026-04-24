@@ -1,3 +1,10 @@
+namespace DaveSinclair.DavesBCSFTP;
+
+using System.Environment;
+using System.IO;
+using System.Text;
+using System.Utilities;
+
 table 50136 DBCFTPDownloadedFilePTE
 {
     Caption = 'Daves Sftp Downloaded Files';

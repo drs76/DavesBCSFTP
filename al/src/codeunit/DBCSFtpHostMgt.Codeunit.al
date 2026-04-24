@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 codeunit 50135 DBCSFtpHostMgtPTE
 {
     var
@@ -7,6 +9,9 @@ codeunit 50135 DBCSFtpHostMgtPTE
         HostCodeLbl: Label 'hostCode', Locked = true;
         PwdKeyTok: Label '%1|pwd', Locked = true;
         SslCertKeyTok: Label '%1|sslcert', Locked = true;
+        PgpPubKeyTok: Label '%1|pgppub', Locked = true;
+        PgpPrivKeyTok: Label '%1|pgppriv', Locked = true;
+        PgpPassTok: Label '%1|pgppass', Locked = true;
 
 
     [NonDebuggable]
@@ -97,6 +102,45 @@ codeunit 50135 DBCSFtpHostMgtPTE
             IsolatedStorage.Delete(StrSubstNo(this.PwdKeyTok, FtpName), DataScope::Company);
         if IsolatedStorage.Contains(StrSubstNo(this.SslCertKeyTok, FtpName), DataScope::Company) then
             IsolatedStorage.Delete(StrSubstNo(this.SslCertKeyTok, FtpName), DataScope::Company);
+        this.DeletePgpKeys(FtpName);
+    end;
+
+    [NonDebuggable]
+    internal procedure UpdatePgpKeys(FtpName: Text; PublicKey: Text; PrivateKey: Text; Passphrase: Text)
+    begin
+        if PublicKey <> '' then
+            IsolatedStorage.Set(StrSubstNo(this.PgpPubKeyTok, FtpName), PublicKey, DataScope::Company);
+        if PrivateKey <> '' then
+            IsolatedStorage.Set(StrSubstNo(this.PgpPrivKeyTok, FtpName), PrivateKey, DataScope::Company);
+        if Passphrase <> '' then
+            IsolatedStorage.Set(StrSubstNo(this.PgpPassTok, FtpName), Passphrase, DataScope::Company);
+    end;
+
+    [NonDebuggable]
+    internal procedure GetPgpKeys(FtpName: Text; var PublicKey: Text; var PrivateKey: Text; var Passphrase: Text)
+    begin
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPubKeyTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Get(StrSubstNo(this.PgpPubKeyTok, FtpName), DataScope::Company, PublicKey);
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPrivKeyTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Get(StrSubstNo(this.PgpPrivKeyTok, FtpName), DataScope::Company, PrivateKey);
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPassTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Get(StrSubstNo(this.PgpPassTok, FtpName), DataScope::Company, Passphrase);
+    end;
+
+    internal procedure HasPgpKeys(FtpName: Text; var HasPublic: Boolean; var HasPrivate: Boolean)
+    begin
+        HasPublic := IsolatedStorage.Contains(StrSubstNo(this.PgpPubKeyTok, FtpName), DataScope::Company);
+        HasPrivate := IsolatedStorage.Contains(StrSubstNo(this.PgpPrivKeyTok, FtpName), DataScope::Company);
+    end;
+
+    internal procedure DeletePgpKeys(FtpName: Text)
+    begin
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPubKeyTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Delete(StrSubstNo(this.PgpPubKeyTok, FtpName), DataScope::Company);
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPrivKeyTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Delete(StrSubstNo(this.PgpPrivKeyTok, FtpName), DataScope::Company);
+        if IsolatedStorage.Contains(StrSubstNo(this.PgpPassTok, FtpName), DataScope::Company) then
+            IsolatedStorage.Delete(StrSubstNo(this.PgpPassTok, FtpName), DataScope::Company);
     end;
 
     internal procedure GetHostCode(JSettings: JsonObject): Text

@@ -1,3 +1,5 @@
+namespace DaveSinclair.DavesBCSFTP;
+
 table 50137 DBCSftpSetupPTE
 {
     Caption = 'Daves Sftp Setup';
