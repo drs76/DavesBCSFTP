@@ -47,4 +47,3 @@ A Business Central 28 extension that provides full SFTP client functionality usi
 
 ---
 
-> **Screenshot note:** screenshots are stored in the `images/` folder alongside this wiki. Replace `placeholder` references with actual screenshots once captured.

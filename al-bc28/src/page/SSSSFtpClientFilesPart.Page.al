@@ -119,20 +119,24 @@ page 58561 SSSSFtpClientFilesPartPTE
                     end;
                 }
             }
-
-            fileuploadaction(UploadFiles)
+            group(UploadGrp)
             {
                 Caption = 'Upload';
-                ToolTip = 'Upload one or more files to the current folder on the SFTP server.';
-                ApplicationArea = All;
-                AllowMultipleFiles = true;
-                Image = Import;
 
-                trigger OnAction(Files: List of [FileUpload])
-                begin
-                    this.BCFtpClientMgt.UploadFiles(this.JSettings, this.SftpParams.GetCurrentFolder(), Files);
-                    this.RefreshFiles();
-                end;
+                fileuploadaction(UploadFiles)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Upload';
+                    ToolTip = 'Upload one or more files to the current folder on the SFTP server.';
+                    AllowMultipleFiles = true;
+                    Image = Add;
+
+                    trigger OnAction(Files: List of [FileUpload])
+                    begin
+                        this.BCFtpClientMgt.UploadFiles(this.JSettings, this.SftpParams.GetCurrentFolder(), Files);
+                        this.RefreshFiles();
+                    end;
+                }
             }
         }
     }

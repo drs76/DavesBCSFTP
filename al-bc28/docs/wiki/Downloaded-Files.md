@@ -3,7 +3,6 @@
 The **Daves Sftp Downloaded Files** list is a persistent store of everything downloaded during SFTP sessions. Files are stored as binary blobs in BC — no temporary files are written to disk on the server.
 
 ![Daves Sftp Downloaded Files list](images/SftpDownloadedFiles.png)
-<!-- TODO: screenshot of the Downloaded Files list -->
 
 ---
 

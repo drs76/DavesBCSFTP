@@ -4,8 +4,7 @@ SFTP hosts are managed from the **BC Simple SFTP Host Card**. Each host stores i
 
 Open the host list from the **Hosts** button in the [[SFTP-Client]], or navigate directly via the BC search.
 
-![SFTP Host Card](images/SftpHostCard.png)
-<!-- TODO: screenshot of the Host Card -->
+![SFTP Host Card](images/SftpHostCard1.png)
 
 ---
 

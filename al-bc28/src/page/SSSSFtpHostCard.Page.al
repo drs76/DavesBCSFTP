@@ -196,7 +196,7 @@ page 58563 SSSSFtpHostCardPTE
                 ApplicationArea = All;
                 Caption = 'Generate AES Key';
                 ToolTip = 'Generate a new random AES encryption key for this host. Warning: regenerating will make previously encrypted files unreadable.';
-                Image = Info;
+                Image = Action;
                 Enabled = Rec."File Encryption Mode" = Rec."File Encryption Mode"::AES;
 
                 trigger OnAction()

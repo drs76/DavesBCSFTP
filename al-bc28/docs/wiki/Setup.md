@@ -3,7 +3,6 @@
 The **BC Simple SFTP Setup** page is a single-record configuration card. Open it by searching for **BC Sftp Setup** in the BC search bar.
 
 ![BC Simple SFTP Setup page](images/SftpSetup.png)
-<!-- TODO: screenshot of the Setup card -->
 
 ---
 

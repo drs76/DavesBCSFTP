@@ -3,7 +3,6 @@
 The **Daves Sftp Client** is the main browsing interface. Search for **BC FTP** in the BC search bar to open it.
 
 ![Daves Sftp Client — folder view](images/SftpClient1.png)
-<!-- TODO: screenshot of the client showing a folder listing -->
 
 ---
 

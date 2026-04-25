@@ -3,7 +3,6 @@
 The built-in file viewer opens directly inside Business Central without requiring any local application. It automatically selects the appropriate renderer based on the file extension.
 
 ![Viewing a JSON file](images/SftpFileViewer1.png)
-<!-- TODO: screenshot of the file viewer showing a text/JSON file -->
 
 ---
 
