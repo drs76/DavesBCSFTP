@@ -42,6 +42,10 @@ public class DavesBCSftpFunctions()
         dynamic ftpSetup = JsonConvert.DeserializeObject(requestBody) ?? string.Empty;
         action ??= ftpSetup?.action;
 
+        //Some security filtering
+        if (Security.DirectoryTraversalIsPresent(ftpSetup?.folderName.ToString()))
+            return new BadRequestObjectResult("Unsafe actions found in the request body.");
+
         if (action == null)
             return new BadRequestObjectResult("Please pass an action on the query string or in the request body");
 
